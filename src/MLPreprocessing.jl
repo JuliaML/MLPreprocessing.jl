@@ -12,9 +12,11 @@ export
     ObsDim,
     expand_poly,
 
-    center!
+    center!,
+    rescale!
 
 include("basis_expansion.jl")
 include("center.jl")
+include("rescale.jl")
 
 end # module
