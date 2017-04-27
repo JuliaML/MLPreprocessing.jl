@@ -13,10 +13,16 @@ export
     expand_poly,
 
     center!,
-    rescale!
+    rescale!,
+
+    FeatureNormalizer,
+    fit,
+    predict,
+    predict!
 
 include("basis_expansion.jl")
 include("center.jl")
 include("rescale.jl")
+include("featurenormalizer.jl")
 
 end # module
