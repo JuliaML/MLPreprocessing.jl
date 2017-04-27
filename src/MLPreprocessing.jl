@@ -1,5 +1,10 @@
+__precompile__()
 module MLPreprocessing
 
-# package code goes here
+using StatsBase
+using LearnBase
+using DataFrames
+
+using LearnBase: ObsDimension, obs_dim, default_obsdim
 
 end # module
