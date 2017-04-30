@@ -13,16 +13,25 @@ export
     expand_poly,
 
     center!,
-    rescale!,
+    standardize!,
+    fixedrange!,
 
-    FeatureNormalizer,
+    StandardScaler,
+    FixedRangeScaler,
     fit,
-    predict,
-    predict!
+    transform,
+    transform!
+
+    #= rescale!, =#
+    #= FeatureNormalizer, =#
+    #= predict, =#
+    #= predict! =#
 
 include("basis_expansion.jl")
 include("center.jl")
 include("rescale.jl")
 include("featurenormalizer.jl")
+include("standardize.jl")
+include("fixedrange.jl")
 
 end # module
