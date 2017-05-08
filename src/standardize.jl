@@ -72,53 +72,115 @@ function standardize!(X::AbstractVector, μ::AbstractFloat, σ::AbstractFloat, :
     μ, σ
 end
 
-immutable StandardScaler 
-    offset::Vector{Float64}
-    scale::Vector{Float64}
-    obsdim::ObsDim.Constant{}
+# --------------------------------------------------------------------
 
-    function StandardScaler(offset, scale, obsdim)
-        @assert length(offset) == length(scale) 
-        new(offset, scale, convert(ObsDimension, obsdim))
-    end
+function standardize!(D::AbstractDataFrame)
+    standardize!(D, names(D))
 end
 
-function StandardScaler{T<:Real}(X::AbstractMatrix{T}; obsdim=LearnBase.default_obsdim(X))
+function standardize!(D::AbstractDataFrame, colnames::AbstractVector{Symbol})
+    μ_vec = Float64[]
+    σ_vec = Float64[]
+
+    for colname in colnames
+        if eltype(D[colname]) <: Real
+            μ = mean(D[colname])
+            σ = std(D[colname])
+            if isna(μ)
+                warn("Column \"$colname\" contains NA values, skipping rescaling of this column!")
+                continue
+            end
+            standardize!(D, colname, μ, σ)
+            push!(μ_vec, μ)
+            push!(σ_vec, σ)
+        else
+            warn("Skipping \"$colname\", rescaling only valid for columns of type T <: Real.")
+        end
+    end
+    μ_vec, σ_vec
+end
+
+function standardize!(D::AbstractDataFrame, colnames::AbstractVector{Symbol}, μ::AbstractVector, σ::AbstractVector)
+    for (icol, colname) in enumerate(colnames)
+        if eltype(D[colname]) <: Real
+            standardize!(D, colname, μ[icol], σ[icol])
+        else
+            warn("Skipping \"$colname\", rescaling only valid for columns of type T <: Real.")
+        end
+    end
+    μ, σ
+end
+
+function standardize!(D::AbstractDataFrame, colname::Symbol, μ::Real, σ::Real)
+    if sum(isna(D[colname])) > 0
+        warn("Column \"$colname\" contains NA values, skipping rescaling on this column!")
+    else
+        newcol::Vector{Float64} = convert(Vector{Float64}, D[colname])
+        nobs = length(newcol)
+        @inbounds for i in eachindex(newcol)
+            newcol[i] = (newcol[i] - μ) / σ
+       end
+        D[colname] = newcol
+    end
+    μ, σ
+end
+
+
+immutable StandardScaler{T,U,M}
+    offset::Vector{T}
+    scale::Vector{U}
+    obsdim::ObsDim.Constant{M}
+end
+
+function StandardScaler{T<:Real,M}(X::AbstractArray{T,M}; obsdim=LearnBase.default_obsdim(X))
     StandardScaler(X, convert(ObsDimension, obsdim))
+end
+
+function StandardScaler{T<:Real,N,M}(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M})
+    StandardScaler(vec(mean(X, M)), vec(std(X, M)), obsdim)
 end
 
 function StandardScaler{T<:Real,M}(X::AbstractArray{T,M}, ::ObsDim.Last)
     StandardScaler(X, ObsDim.Constant{M})
 end
 
-function StandardScaler{T<:Real,M}(X::AbstractArray{T,M}, obsdim::ObsDim.Constant{M})
-    StandardScaler(mean(X, M), std(X, M), obsdim)
-end
-
-function StandardScaler{T<:Real,M}(X::AbstractArray{T,M}, offset, scale; obsdim=LearnBase.default_obsdim(X))
+function StandardScaler{T<:Real,M}(X::AbstractArray{T,M}, offset, scale, obsdim=LearnBase.default_obsdim(X))
     StandardScaler(offset, scale, convert(ObsDimension, obsdim))
 end
 
-function StandardScaler{T<:Real,M}(X::AbstractArray{T,M}, offset, scale, ::ObsDim.Last)
-    StandardScaler(offset, scale, ObsDim.Constant{M})
+function StandardScaler{T<:Real,N}(X::AbstractArray{T,N}, offset, scale, ::ObsDim.Last)
+    StandardScaler(offset, scale, ObsDim.Constant{N})
+end
+
+function StandardScaler(D::AbstractDataFrame)
+    flt_1 = Bool[T <: Real for T in eltypes(D)]
+    flt_2 = Bool[any(isna(D[colname])) for colname in names(D)]
+    flt = !(flt_1 | flt_2)
+    offset = Float64[mean(D[colname]) for colname in names(D)[flt]]
+    scale = Float64[std(D[colname]) for colname in names(D)[flt]]
+    StandardScaler(offset, scale, ObsDim.Constant{1})
+end
+
+function StandardScaler(D::AbstractDataFrame, offset, scale)
+    StandardScaler(offset, scale, ObsDim.Constant{1})
 end
 
 function StatsBase.fit{T<:Real}(::Type{StandardScaler}, X::AbstractMatrix{T}; obsdim=LearnBase.default_obsdim(X))
     StandardScaler(X, obsdim=obsdim)
 end
 
-function transform!{T<:Real}(cs::StandardScaler, X::AbstractMatrix{T})
-    @assert length(cs.offset) == size(X, 1)
+function transform!{T<:AbstractFloat,N}(X::AbstractArray{T,N}, cs::StandardScaler)
     standardize!(X, cs.offset, cs.scale, obsdim=cs.obsdim)
     X
 end
 
-function transform{T<:AbstractFloat}(cs::StandardScaler, X::AbstractMatrix{T})
+function transform{T<:AbstractFloat,N}(X::AbstractArray{T,N}, cs::StandardScaler)
     Xnew = copy(X)
-    transform!(cs, Xnew)
+    transform!(Xnew, cs)
 end
 
-function transform{T<:Real}(cs::StandardScaler, X::AbstractMatrix{T})
-    X = convert(AbstractMatrix{AbstractFloat}, X)
-    transform!(cs, X)
+function transform{T<:Real,N}(X::AbstractArray{T,N}, cs::StandardScaler)
+    Xnew = convert(AbstractArray{Float64, N}, X)
+    transform!(Xnew, cs)
+    Xnew
 end

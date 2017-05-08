@@ -47,7 +47,7 @@ function fixedrange!(X, lower, upper, xmin, xmax; obsdim=LearnBase.default_obsdi
     fixedrange!(X, lower, upper, xmin, xmax, convert(ObsDimension, obsdim))
 end
 
-function fixedrange!(X::AbstractMatrix, lower, upper, xmin, xmax, ::ObsDim.Constant{1})
+function fixedrange!(X::AbstractMatrix, lower::Real, upper::Real, xmin::AbstractVector, xmax::AbstractVector, ::ObsDim.Constant{1})
     xrange = xmax .- xmin
     scale = upper - lower
     nObs, nVars = size(X)
@@ -60,7 +60,7 @@ function fixedrange!(X::AbstractMatrix, lower, upper, xmin, xmax, ::ObsDim.Const
     lower, upper, xmin, xmax
 end
 
-function fixedrange!(X::AbstractMatrix, lower, upper, xmin, xmax, ::ObsDim.Constant{2})
+function fixedrange!(X::AbstractMatrix, lower::Real, upper::Real, xmin::AbstractVector, xmax::AbstractVector, ::ObsDim.Constant{2})
     xrange = xmax .- xmin
     scale = upper - lower
     nVars, nObs = size(X)
@@ -73,8 +73,7 @@ function fixedrange!(X::AbstractMatrix, lower, upper, xmin, xmax, ::ObsDim.Const
     lower, upper, xmin, xmax
 end
 
-function fixedrange!{N}(X::AbstractVector, lower::Real, upper::Real, xmin::Vector, xmax::Vector, ::ObsDim.Constant{N})
-    @assert length(xmin) == length(xmax) == length(X) 
+function fixedrange!{M}(X::AbstractVector, lower::Real, upper::Real, xmin::AbstractVector, xmax::AbstractVector, ::ObsDim.Constant{M})
     xrange = xmax .- xmin
     scale = upper - lower
     nVars = length(X)
@@ -85,70 +84,58 @@ function fixedrange!{N}(X::AbstractVector, lower::Real, upper::Real, xmin::Vecto
     lower, upper, xmin, xmax
 end
 
-function fixedrange!{N}(X::AbstractVector, lower::Real, upper::Real, xmin::Real, xmax::Real, ::ObsDim.Constant{N})
-    xrange = xmax - xmin
-    scale = upper - lower
-    nVars = length(X)
-
-    @inbounds for iVar in eachindex(X) 
-        X[iVar] = lower + (X[iVar] - xmin) / xrange * scale
-    end
-    lower, upper, xmin, xmax
+immutable FixedRangeScaler{T<:Real,U<:Real,V<:Real,W<:Real,M}
+    lower::T
+    upper::U
+    xmin::Vector{V}
+    xmax::Vector{W}
+    obsdim::ObsDim.Constant{M}
 end
 
-
-immutable FixedRangeScaler 
-    lower::Float64
-    upper::Float64
-    xmin::Vector
-    xmax::Vector
-    obsdim::ObsDim.Constant{}
-
-    function FixedRangeScaler(lower, upper, xmin, xmax, obsdim)
-        @assert length(xmin) == length(xmax) 
-        new(lower, upper, xmin, xmax, convert(ObsDimension, obsdim))
-    end
-end
-
-
-function FixedRangeScaler{T<:Real}(X::AbstractArray{T}; obsdim=LearnBase.default_obsdim(X))
+function FixedRangeScaler{T<:Real,N}(X::AbstractArray{T,N}; obsdim=LearnBase.default_obsdim(X))
     FixedRangeScaler(X, convert(ObsDimension, obsdim))
 end
 
-function FixedRangeScaler{T<:Real,M}(X::AbstractArray{T,M}, ::ObsDim.Last)
-    FixedRangeScaler(X, ObsDim.Constant{M}())
-end
-
-function FixedRangeScaler{T<:Real,M}(X::AbstractArray{T}, obsdim::ObsDim.Constant{M})
+function FixedRangeScaler{T<:Real,N,M}(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M})
     FixedRangeScaler(0, 1, vec(minimum(X, M)), vec(maximum(X, M)), obsdim)
 end
 
-function FixedRangeScaler{T<:Real}(X::AbstractArray{T}, lower, upper; obsdim=LearnBase.default_obsdim(X))
+function FixedRangeScaler{T<:Real,N}(X::AbstractArray{T,N}, ::ObsDim.Last)
+    FixedRangeScaler(X, ObsDim.Constant{N}())
+end
+
+function FixedRangeScaler{T<:Real,N}(X::AbstractArray{T,N}, lower, upper; obsdim=LearnBase.default_obsdim(X))
     FixedRangeScaler(X, lower, upper, convert(ObsDimension, obsdim))
 end
 
-function FixedRangeScaler{T<:Real,M}(X::AbstractMatrix{T}, lower, upper, obsdim::ObsDim.Constant{M})
+function FixedRangeScaler{T<:Real,N,M}(X::AbstractArray{T,N}, lower, upper, obsdim::ObsDim.Constant{M})
     FixedRangeScaler(lower, upper, vec(minimum(X, M)), vec(maximum(X, M)), obsdim)
 end
 
-function FixedRangeScaler{T<:Real,M}(X::AbstractArray{T,M}, lower, upper, ::ObsDim.Last)
-    FixedRangeScaler(X, lower, upper, ObsDim.Constant{M}())
+function FixedRangeScaler{T<:Real,N}(X::AbstractArray{T,N}, lower, upper, ::ObsDim.Last)
+    FixedRangeScaler(X, lower, upper, ObsDim.Constant{N}())
 end
 
-function StatsBase.fit{T<:Real}(::Type{FixedRangeScaler}, X::AbstractArray{T}; obsdim=LearnBase.default_obsdim(X))
-    FixedRangeScaler(X, obsdim=obsdim)
+function StatsBase.fit{T<:Real,N}(::Type{FixedRangeScaler}, X::AbstractArray{T,N}; obsdim=LearnBase.default_obsdim(X))
+    FixedRangeScaler(X, convert(ObsDimension, obsdim))
 end
 
-function StatsBase.fit{T<:Real}(::Type{FixedRangeScaler}, X::AbstractArray{T}, lower, upper; obsdim=LearnBase.default_obsdim(X))
-    FixedRangeScaler(X, lower, upper, obsdim=obsdim)
+function StatsBase.fit{T<:Real,N}(::Type{FixedRangeScaler}, X::AbstractArray{T,N}, lower, upper; obsdim=LearnBase.default_obsdim(X))
+    FixedRangeScaler(X, lower, upper, convert(ObsDimension, obsdim))
 end
 
-function transform!{T<:AbstractFloat}(X::AbstractArray{T}, cs::FixedRangeScaler)
-    unitrange!(X, cs.lower, cs.upper, cs.xmin, cs.xmax, cs.obsdim)
+function transform!{T<:AbstractFloat,N}(X::AbstractArray{T,N}, cs::FixedRangeScaler)
+    fixedrange!(X, cs.lower, cs.upper, cs.xmin, cs.xmax, cs.obsdim)
 end
 
-function transform{T<:AbstractFloat}(X::AbstractArray{T}, cs::FixedRangeScaler)
+function transform{T<:AbstractFloat,N}(X::AbstractArray{T,N}, cs::FixedRangeScaler)
     Xnew = copy(X)
-    unitrange!(Xnew, cs.lower, cs.upper, cs.xmin, cs.xmax, cs.obsdim)
+    fixedrange!(Xnew, cs.lower, cs.upper, cs.xmin, cs.xmax, cs.obsdim)
+    Xnew
+end
+
+function transform{T<:Real,N}(X::AbstractArray{T,N}, cs::FixedRangeScaler)
+    Xnew = convert(AbstractArray{Float64, N}, X)
+    fixedrange!(Xnew, cs.lower, cs.upper, cs.xmin, cs.xmax, cs.obsdim)
     Xnew
 end

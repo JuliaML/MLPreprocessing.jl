@@ -92,15 +92,7 @@ end
 # --------------------------------------------------------------------
 
 function center!(D::AbstractDataFrame)
-    μ_vec = Float64[]
-
-    flt = Bool[T <: Real for T in eltypes(D)]
-    for colname in names(D)[flt]
-        μ = mean(D[colname])
-        center!(D, colname, μ)
-        push!(μ_vec, μ)
-    end
-    μ_vec
+    center!(D, names(D))
 end
 
 function center!(D::AbstractDataFrame, colnames::AbstractVector{Symbol})
