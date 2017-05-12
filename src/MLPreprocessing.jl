@@ -26,11 +26,12 @@ export
     #= FeatureNormalizer, =#
     #= predict, =#
     #= predict! =#
-
+    
+include("scalerange.jl")
 include("basis_expansion.jl")
 include("center.jl")
-include("rescale.jl")
-include("featurenormalizer.jl")
+#include("rescale.jl")
+#include("featurenormalizer.jl")
 include("standardize.jl")
 include("fixedrange.jl")
 
