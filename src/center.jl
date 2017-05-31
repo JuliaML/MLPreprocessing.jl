@@ -44,24 +44,20 @@ Examples:
     μ = center!(D, [-1,-1], operate_on=[:A, :B])
 """
 
-function center!(X, μ; obsdim=LearnBase.default_obsdim(X), operate_on=default_scalerange(X, convert(ObsDimension, obsdim)))
+function center!(X, μ; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     center!(X, μ, convert(ObsDimension, obsdim), operate_on)
 end
 
-function center!(X; obsdim=LearnBase.default_obsdim(X), operate_on=default_scalerange(X, convert(ObsDimension, obsdim)))
+function center!(X; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     center!(X, convert(ObsDimension, obsdim), operate_on)
 end
 
-function center!{T,N,M}(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M}; operate_on=default_scalerange(X, convert(ObsDimension, obsdim)))
+function center!{T,N,M}(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M}; operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     center!(X, ObsDim.Constant{M}(), operate_on)
 end
 
-function center!{T,N}(X::AbstractArray{T,N}, obsdim::ObsDim.Last; operate_on=default_scalerange(X, convert(ObsDimension, obsdim)))
+function center!{T,N}(X::AbstractArray{T,N}, obsdim::ObsDim.Last; operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     center!(X, ObsDim.Constant{N}(), operate_on)
-end
-
-function center!{T,N,M}(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M}, operate_on::AbstractVector)
-    center!(X, ObsDim.Constant{M}(), operate_on)
 end
 
 function center!{T,N}(X::AbstractArray{T,N}, obsdim::ObsDim.Last, operate_on::AbstractVector)
@@ -73,11 +69,11 @@ function center!{T,N,M}(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M}, opera
     center!(X, μ, obsdim, operate_on)
 end
 
-function center!{T,N,M}(X::AbstractArray{T,N}, μ::AbstractVector, obsdim::ObsDim.Constant{M}; operate_on=default_scalerange(X, convert(ObsDimension, obsdim)))
+function center!{T,N,M}(X::AbstractArray{T,N}, μ::AbstractVector, obsdim::ObsDim.Constant{M}; operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     center!(X, μ, ObsDim.Constant{M}(), operate_on)
 end
 
-function center!{T,N}(X::AbstractArray{T,N}, μ::AbstractVector, obsdim::ObsDim.Last; operate_on=default_scalerange(X, convert(ObsDimension, obsdim)))
+function center!{T,N}(X::AbstractArray{T,N}, μ::AbstractVector, obsdim::ObsDim.Last; operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     center!(X, μ, ObsDim.Constant{N}(), operate_on)
 end
 
@@ -103,8 +99,7 @@ function center!(X::AbstractMatrix, μ::AbstractVector, ::ObsDim.Constant{2}, op
     μ
 end
 
-
-function center!(x::AbstractVector; obsdim=LearnBase.default_obsdim(x), operate_on=default_scalerange(x))
+function center!(x::AbstractVector; obsdim=LearnBase.default_obsdim(x), operate_on=default_scaleselection(x))
     center!(x, convert(ObsDimension, obsdim), operate_on)
 end
 
@@ -141,7 +136,7 @@ end
 
 # --------------------------------------------------------------------
 
-function center!(D::AbstractDataFrame; operate_on=default_scalerange(D))
+function center!(D::AbstractDataFrame; operate_on=default_scaleselection(D))
     center!(D, operate_on)
 end
 
@@ -163,7 +158,7 @@ function center!(D::AbstractDataFrame, operate_on::AbstractVector{Symbol})
     μ_vec
 end
 
-function center!(D::AbstractDataFrame, μ::AbstractVector; operate_on=default_scalerange(D))
+function center!(D::AbstractDataFrame, μ::AbstractVector; operate_on=default_scaleselection(D))
     center!(D, μ, operate_on)
 end
 

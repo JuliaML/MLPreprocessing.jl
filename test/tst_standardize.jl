@@ -1,93 +1,157 @@
-e_x = collect(-2:0.5:10)
-e_X = expand_poly(e_x, 5)
-df = DataFrame(A=rand(10), B=collect(1:10), C=[string(x) for x in 1:10])
-df_na = deepcopy(df)
-df_na[1, :A] = NA
+X = collect(Float64, reshape(1:40, 10, 4))
+x = rand(10) * 10
+
+D = DataFrame(A=rand(10), B=collect(1:10), C=[hex(x) for x in 11:20])
+D_NA = deepcopy(D)
+D_NA[1, :A] = NA
 
 @testset "Array" begin
     # Rescale Vector
-    xa = copy(e_x)
-    mu, sigma = standardize!(xa)
-    @test mu ≈ mean(e_x)
-    @test sigma ≈ std(e_x)
-    @test abs(mean(xa)) <= 10e-10
-    @test std(xa) ≈ 1
+    xx = deepcopy(x)
+    mu, sigma = standardize!(xx)
+    @test mu ≈ mean(x)
+    @test sigma ≈ std(x)
+    @test abs(mean(xx)) <= 10e-10
+    @test std(xx) ≈ 1
 
-    xa = copy(e_x)
-    mu, sigma = standardize!(xa, mu, sigma)
-    @test abs(mean(xa)) <= 10e-10
-    @test std(xa) ≈ 1
+    xx = deepcopy(x)
+    mu, sigma = standardize!(xx, mu, sigma)
+    @test abs(mean(xx)) <= 10e-10
+    @test std(xx) ≈ 1
 
-    xa = copy(e_x)
-    mu, sigma = standardize!(xa, mu, sigma, obsdim=1)
-    @test abs(mean(xa)) <= 10e-10
-    @test std(xa) ≈ 1
+    xx = deepcopy(x)
+    mu, sigma = standardize!(xx, mu, sigma, obsdim=1)
+    @test abs(mean(xx)) <= 10e-10
+    @test std(xx) ≈ 1
 
-    xa = copy(e_x)
-    mu = copy(e_x) .- 1
-    sigma = ones(e_x)
-    mu, sigma = standardize!(xa, mu, sigma, obsdim=1)
-    @test mean(xa) ≈ 1
+    xx = deepcopy(x)
+    mu = deepcopy(x) .- 1
+    sigma = ones(x)
+    mu, sigma = standardize!(xx, mu, sigma, obsdim=1)
+    @test mean(xx) ≈ 1
 
-    Xa = copy(e_X)
-    standardize!(Xa)
-    @test abs(sum(mean(Xa, 2))) <= 10e-10
-    @test std(Xa, 2) ≈ [1, 1, 1, 1, 1]
+    # Rescale Matrix
+    XX = deepcopy(X)
+    standardize!(XX)
+    @test abs(sum(mean(XX, 2))) <= 10e-10
+    @test std(XX, 2) ≈ ones(size(X, 1)) 
 
-    Xa = copy(e_X)
-    standardize!(Xa, obsdim=2)
-    @test abs(sum(mean(Xa, 2))) <= 10e-10
-    @test std(Xa, 2) ≈ [1, 1, 1, 1, 1]
+    XX = deepcopy(X)
+    standardize!(XX, obsdim=2)
+    @test abs(sum(mean(XX, 2))) <= 10e-10
+    @test std(XX, 2) ≈ ones(size(X, 1)) 
 
-    Xa = copy(e_X)
-    standardize!(Xa, obsdim=1)
-    @test abs(sum(mean(Xa, 1))) <= 10e-10
+    XX = deepcopy(X)
+    standardize!(XX, obsdim=1)
+    @test abs(sum(mean(XX, 1))) <= 10e-10
+    @test vec(std(XX, 1)) ≈ ones(size(X, 2)) 
 
-    Xa = copy(e_X)
-    mu = vec(mean(Xa, 1))
-    sigma = vec(std(Xa, 1))
-    standardize!(Xa, mu, sigma, obsdim=1)
-    @test abs(sum(mean(Xa, 1))) <= 10e-10
+    XX = deepcopy(X)
+    mu = vec(mean(XX, 1))
+    sigma = vec(std(XX, 1))
+    standardize!(XX, mu, sigma, obsdim=1)
+    @test abs(sum(mean(XX, 1))) <= 10e-10
 
-    Xa = copy(e_X)
-    mu = vec(mean(Xa, 2))
-    sigma = vec(std(Xa, 2))
-    standardize!(Xa, mu, sigma, obsdim=2)
-    @test abs(sum(mean(Xa, 2))) <= 10e-10
+    XX = deepcopy(X)
+    mu = vec(mean(XX, 2))
+    sigma = vec(std(XX, 2))
+    standardize!(XX, mu, sigma, obsdim=2)
+    @test abs(sum(mean(XX, 2))) <= 10e-10
+
+    XX = deepcopy(X)
+    flt = [1,2]
+    standardize!(XX, obsdim=1, operate_on=flt)
+    @test abs(sum(mean(XX[:,flt], 1))) <= 10e-10
+    @test vec(std(XX[:,flt], 1)) ≈ ones(2) 
+    @test all(X[:,[3,4]] .== XX[:,[3,4]])
+
+    XX = deepcopy(X)
+    flt = [2,8]
+    mu = vec(mean(XX, 2))
+    sigma = vec(std(XX, 2))
+    standardize!(XX, mu[flt], sigma[flt], obsdim=2, operate_on=flt)
+    @test abs(sum(mean(XX[flt,:], 2))) <= 10e-10
+
+    scaler = fit(StandardScaler, X)
+    XX = transform(X, scaler)
+    @test abs(sum(mean(XX, 2))) <= 10e-10
+    @test std(XX, 2) ≈ ones(size(X, 1)) 
+
+    scaler = fit(StandardScaler, X, obsdim=2)
+    XX = transform(X, scaler)
+    @test abs(sum(mean(XX, 2))) <= 10e-10
+    @test std(XX, 2) ≈ ones(size(X, 1)) 
+
+    scaler = fit(StandardScaler, X, obsdim=1)
+    XX = transform(X, scaler)
+    @test abs(sum(mean(XX, 1))) <= 10e-10
+    @test vec(std(XX, 1)) ≈ ones(size(X, 2)) 
+
+    flt = [1,4]
+    scaler = fit(StandardScaler, X, obsdim=1, operate_on=flt)
+    XX = transform(X, scaler)
+    xx = transform(vec(X[1,:]), scaler)
+    @test abs(sum(mean(XX[:,flt], 1))) <= 10e-10
+    @test vec(std(XX[:,flt], 1)) ≈ ones(size(X[:,flt], 2)) 
+    @test all(xx .== XX[1,:])
+
+    XX = deepcopy(X)
+    xx = vec(X[1,:])
+    flt = [1,4]
+    scaler = fit(StandardScaler, X, obsdim=1, operate_on=flt)
+    transform!(XX, scaler)
+    transform!(xx, scaler)
+    @test abs(sum(mean(XX[:,flt], 1))) <= 10e-10
+    @test vec(std(XX[:,flt], 1)) ≈ ones(size(X[:,flt], 2)) 
+    @test all(xx .== XX[1,:])
 end
 
-#= @testset "DataFrame" begin =#
-#=     D = copy(df) =#
-#=     mu, sigma = standardize!(D) =#
-#=     @test abs(sum([mean(D[colname]) for colname in names(D)[1:2]])) <= 10e-10 =#
-#=     @test mean([std(D[colname]) for colname in names(D)[1:2]]) - 1 <= 10e-10 =#
+@testset "DataFrame" begin
+    DD = deepcopy(D)
+    mu, sigma = standardize!(DD)
+    @test abs(sum([mean(DD[colname]) for colname in names(DD)[1:2]])) <= 10e-10
+    @test mean([std(DD[colname]) for colname in names(DD)[1:2]]) - 1 <= 10e-10
 
-#=     D = copy(df) =#
-#=     mu, sigma = standardize!(D, [:A, :B]) =#
-#=     @test abs(sum([mean(D[colname]) for colname in names(D)[1:2]])) <= 10e-10 =#
-#=     @test mean([std(D[colname]) for colname in names(D)[1:2]]) - 1 <= 10e-10 =#
+    DD = deepcopy(D)
+    mu, sigma = standardize!(DD, operate_on=[:A,:B,:C])
+    @test abs(sum([mean(DD[colname]) for colname in names(DD)[1:2]])) <= 10e-10
+    @test mean([std(DD[colname]) for colname in names(DD)[1:2]]) - 1 <= 10e-10
 
-#=     D = copy(df) =#
-#=     mu_check = [mean(D[colname]) for colname in names(D)[1:2]] =#
-#=     sigma_check = [std(D[colname]) for colname in names(D)[1:2]] =#
-#=     mu, sigma = standardize!(D, [:A, :B], mu_check, sigma_check) =#
-#=     @test abs(sum([mean(D[colname]) for colname in names(D)[1:2]])) <= 10e-10 =#
-#=     @test mean([std(D[colname]) for colname in names(D)[1:2]]) - 1 <= 10e-10 =#
+    DD = deepcopy(D)
+    mu, sigma = standardize!(DD, mu, sigma, operate_on=[:A,:B])
+    @test abs(sum([mean(DD[colname]) for colname in names(DD)[1:2]])) <= 10e-10
+    @test mean([std(DD[colname]) for colname in names(DD)[1:2]]) - 1 <= 10e-10
 
-#=     # skip columns that contain NA values =#
-#=     D = copy(df_na) =#
-#=     mu, sigma = standardize!(D, [:A, :B]) =#
-#=     @test isna(D[1, :A]) =#
-#=     @test all(D[2:end, :A] .== df_na[2:end, :A]) =#
-#=     @test abs(mean(D[:B])) < 10e-10 =#
-#=     @test abs(std(D[:B])) - 1 < 10e-10 =#
+    # skip columns that contain NA values
+    DD = deepcopy(D_NA)
+    mu, sigma = standardize!(DD)
+    @test isna(DD[1, :A])
+    @test all(DD[2:end, :A] .== D_NA[2:end, :A])
+    @test abs(mean(DD[:B])) < 10e-10
+    @test abs(std(DD[:B])) - 1 < 10e-10
 
-#=     D = copy(df_na) =#
-#=     mu_check = [mean(D[colname]) for colname in names(D)[1:2]] =#
-#=     sigma_check = [std(D[colname]) for colname in names(D)[1:2]] =#
-#=     mu, sigma = standardize!(D, [:A, :B], mu_check, sigma_check) =#
-#=     #1= @test isna(D[1, :A]) =1# =#
-#=     #1= @test all(D[2:end, :A] .== df_na[2:end, :A]) =1# =#
-#=     #1= @test abs(mean(D[:B])) < 10e-10 =1# =#
-#=     #1= @test (abs(std(D[:B])) - 1) < 10e-10 =1# =#
-#= end =#
+    scaler = fit(StandardScaler, D)
+    DD = transform(D, scaler)
+    @test mean(DD[:A]) <= 10e-10 
+    @test std(DD[:A]) - 1  <= 10e-10 
+    @test mean(DD[:B]) <= 10e-10 
+    @test std(DD[:B]) - 1  <= 10e-10 
+    @test all(DD[:C] .== D[:C])
+
+    scaler = fit(StandardScaler, D, operate_on=[:A, :C])
+    DD = transform(D, scaler)
+    @test mean(DD[:A]) <= 10e-10 
+    @test std(DD[:A]) - 1  <= 10e-10 
+    @test all(DD[:B] .== D[:B])
+    @test all(DD[:C] .== D[:C])
+    @test mean(D[:A]) != mean(DD[:A]) 
+
+    DD = deepcopy(D)
+    scaler = fit(StandardScaler, DD, operate_on=[:A, :C])
+    transform!(DD, scaler)
+    @test mean(DD[:A]) <= 10e-10 
+    @test std(DD[:A]) - 1  <= 10e-10 
+    @test all(DD[:B] .== D[:B])
+    @test all(DD[:C] .== D[:C])
+    @test mean(D[:A]) != mean(DD[:A]) 
+end

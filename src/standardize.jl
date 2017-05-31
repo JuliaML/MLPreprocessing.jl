@@ -1,11 +1,52 @@
 """
-    μ, σ = standardize!(X[, μ, σ, obsdim])
+    μ, σ = standardize!(X[, μ, σ; obsdim, operate_on])
 
-Center `X` along `obsdim` around the corresponding entry in the
-vector `μ` and then standardize each feature using the corresponding
-entry in the vector `σ`.
+or
+
+    μ, σ = standardize!(D[, μ, σ; operate_on])
+
+Normalize `X` along `obsdim` according to X = (X - μ) / σ.
+If μ and σ are omitted they are computed such that variables have a mean of zero
+
+
+
+`μ`         :  Vector or value describing the translation.
+               Defaults to mean(X, 2)
+
+`σ`         :  Vector or value describing the scale.
+               Defaults to std(X, 2)
+
+`obsdim`    :  Specify which axis corresponds to observations.
+               Defaults to obsdim=2 (observations are columns of matrix)
+               For DataFrames `obsdim` is obsolete and centering occurs
+               column wise.
+
+`operate_on`:  Specify the indices of columns or rows to be centered.
+               Defaults to all columns/rows.
+               For DataFrames this must be a vector of symbols, not indices
+               E.g. `operate_on`=[1,3] will perform centering on columns
+               with index 1 and 3 only (if obsdim=1, else rows 1 and 3)
+
+
+Note on DataFrames:
+Columns containing `NA` values are skipped.
+Columns containing non numeric elements are skipped.
+
+Examples:
+
+    X = rand(4, 100)
+    x = rand(10)
+    D = DataFrame(A=rand(10), B=collect(1:10), C=[string(x) for x in 1:10])
+
+    μ, σ = standardize!(X, obsdim=2)
+    μ, σ = standardize!(X, ObsDim.First())
+    μ, σ = standardize!(X, obsdim=1, operate_on=[1,3]
+    μ, σ = standardize!(X, [7.0,8.0], [1,1], obsdim=1, operate_on=[1,3]
+    μ, σ = standardize!(D)
+    μ, σ = standardize!(D, operate_on=[:A,:B])
+    μ, σ = standardize!(D, [-1,-1], [2,2], operate_on=[:A,:B])
 """
-function standardize!(X, μ, σ; obsdim=LearnBase.default_obsdim(X), operate_on=default_scalerange(X, convert(ObsDimension, obsdim)))
+function standardize!(X, μ, σ; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     standardize!(X, μ, σ, convert(ObsDimension, obsdim), operate_on)
 end
 
@@ -13,7 +54,7 @@ function standardize!{T,N}(X::AbstractArray{T,N}, μ, σ, ::ObsDim.Last, operate
     standardize!(X, μ, σ, ObsDim.Constant{N}(), operate_on)
 end
 
-function standardize!(X; obsdim=LearnBase.default_obsdim(X), operate_on=default_scalerange(X, convert(ObsDimension, obsdim)))
+function standardize!(X; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     standardize!(X, convert(ObsDimension, obsdim), operate_on)
 end
 
@@ -73,9 +114,8 @@ function standardize!{M}(X::AbstractVector, μ::AbstractFloat, σ::AbstractFloat
 end
 
 # --------------------------------------------------------------------
-
-function standardize!(D::AbstractDataFrame)
-    standardize!(D, names(D))
+function standardize!(D::AbstractDataFrame; operate_on=default_scaleselection(D))
+    standardize!(D, operate_on)
 end
 
 function standardize!(D::AbstractDataFrame, colnames::AbstractVector{Symbol})
@@ -87,33 +127,33 @@ function standardize!(D::AbstractDataFrame, colnames::AbstractVector{Symbol})
             μ = mean(D[colname])
             σ = std(D[colname])
             if isna(μ)
-                warn("Column \"$colname\" contains NA values, skipping rescaling of this column!")
+                warn("Skipping \"$colname\" because it contains NA values")
                 continue
             end
-            standardize!(D, colname, μ, σ)
+            standardize!(D, μ, σ, colname)
             push!(μ_vec, μ)
             push!(σ_vec, σ)
         else
-            warn("Skipping \"$colname\", rescaling only valid for columns of type T <: Real.")
+            warn("Skipping \"$colname\" because data is not of type T <: Real.")
         end
     end
     μ_vec, σ_vec
 end
 
-function standardize!(D::AbstractDataFrame, colnames::AbstractVector{Symbol}, μ::AbstractVector, σ::AbstractVector)
+function standardize!(D::AbstractDataFrame, μ::AbstractVector, σ::AbstractVector; operate_on=default_scaleselection(D))
+    standardize!(D, μ, σ, operate_on)
+end
+
+function standardize!(D::AbstractDataFrame, μ::AbstractVector, σ::AbstractVector, colnames::AbstractVector{Symbol})
     for (icol, colname) in enumerate(colnames)
-        if eltype(D[colname]) <: Real
-            standardize!(D, colname, μ[icol], σ[icol])
-        else
-            warn("Skipping \"$colname\", rescaling only valid for columns of type T <: Real.")
-        end
+        standardize!(D, μ[icol], σ[icol], colname)
     end
     μ, σ
 end
 
-function standardize!(D::AbstractDataFrame, colname::Symbol, μ::Real, σ::Real)
-    if sum(isna(D[colname])) > 0
-        warn("Column \"$colname\" contains NA values, skipping rescaling on this column!")
+function standardize!(D::AbstractDataFrame, μ::Real, σ::Real, colname::Symbol)
+    if any(isna(D[colname])) | !(eltype(D[colname]) <: Real)
+        warn("Skipping \"$colname\" because it contains NA values or is not of type <: Real")
     else
         newcol::Vector{Float64} = convert(Vector{Float64}, D[colname])
         nobs = length(newcol)
@@ -125,15 +165,72 @@ function standardize!(D::AbstractDataFrame, colname::Symbol, μ::Real, σ::Real)
     μ, σ
 end
 
+"""
+`StandardScaler` is used with the functions `fit()` and `transform()`.
+After fitting a `StandardScaler` to one data set, it can be used to perform the same
+transformation to a new set of data. E.g. fit the `StandardScaler` to your training
+data and then apply the scaling to the test data at a later stage. (See examples below).
 
-immutable StandardScaler{T,U,M,I}
+    fit(StandardScaler, X[, μ, σ; obsdim, operate_on])
+
+`X`         :  Data of type Matrix or `DataFrame`.
+
+`μ`         :  Vector or scalar describing the translation.
+               Defaults to mean(X, obsdim)
+
+`σ`         :  Vector or scalar describing the scale.
+               Defaults to std(X, obsdim)
+
+`obsdim`    :  Specify which axis corresponds to observations.
+               Defaults to obsdim=2 (observations are columns of matrix)
+               For DataFrames `obsdim` is obsolete and rescaling occurs
+               column wise.
+
+`operate_on`:  Specify the indices of columns or rows to be centered.
+               Defaults to all columns/rows.
+               For DataFrames this must be a vector of symbols, not indices.
+               E.g. `operate_on`=[1,3] will perform centering on columns
+               with index 1 and 3 only (if obsdim=1, else rows 1 and 3)
+
+Note on DataFrames:
+Columns containing `NA` values are skipped.
+Columns containing non numeric elements are skipped.
+
+Examples:
+
+
+    Xtrain = rand(100, 4)
+    Xtest  = rand(10, 4)
+    x = rand(4)
+    Dtrain = DataFrame(A=rand(10), B=collect(1:10), C=[string(x) for x in 1:10])
+    Dtest = DataFrame(A=rand(10), B=collect(1:10), C=[string(x) for x in 1:10])
+
+    scaler = fit(StandardScaler, Xtrain)
+    scaler = fit(StandardScaler, Xtrain, obsdim=1)
+    scaler = fit(StandardScaler, Xtrain, obsdim=1, operate_on=[1,3])
+    transform(Xtest, scaler)
+    transform!(Xtest, scaler)
+    transform(x, scaler)
+    transform!(x, scaler)
+
+    scaler = fit(StandardScaler, Dtrain)
+    scaler = fit(StandardScaler, Dtrain, operate_on=[:A,:B])
+    transform(Dtest, scaler)
+    transform!(Dtest, scaler)
+
+Note that for `transform!` the data matrix `X` has to be of type <: AbstractFloat
+as the scaling occurs inplace. (E.g. cannot be of type Matrix{Int64}). This is not
+the case for `transform` however.
+For `DataFrames` `transform!` can be used on columns of type <: Integer.
+"""
+immutable StandardScaler{T<:Real,U<:Real,I,M}
     offset::Vector{T}
     scale::Vector{U}
     obsdim::ObsDim.Constant{M}
     operate_on::Vector{I}
 end
 
-function StandardScaler{T<:Real,M}(X::AbstractArray{T,M}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scalerange(X, convert(ObsDimension, obsdim)))
+function StandardScaler{T<:Real,M}(X::AbstractArray{T,M}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     StandardScaler(X, convert(ObsDimension, obsdim), operate_on)
 end
 
@@ -141,30 +238,34 @@ function StandardScaler{T<:Real,M}(X::AbstractArray{T,M}, ::ObsDim.Last, operate
     StandardScaler(X, ObsDim.Constant{M}(), operate_on)
 end
 
-function StandardScaler{T<:Real,N,M}(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M}, operate_on)
-    StandardScaler(vec(mean(X, M))[operate_on], vec(std(X, M))[operate_on], obsdim, operate_on)
+function StandardScaler{T<:Real,N,M}(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M}, operate_on::AbstractVector)
+    offset = vec(mean(X,M))[operate_on] 
+    scale = vec(std(X, M))[operate_on]
+    StandardScaler(offset, scale, obsdim, operate_on)
 end
 
-function StandardScaler{T<:Real,M}(X::AbstractArray{T,M}, offset, scale; obsdim=LearnBase.default_obsdim(X), operate_on=default_scalerange(X, convert(ObsDimension, obsdim)))
-    StandardScaler(offset, scale, convert(ObsDimension, obsdim), operate_on)
+function StandardScaler(D::AbstractDataFrame; operate_on=default_scaleselection(D))
+    StandardScaler(D, operate_on)
 end
 
-function StandardScaler{T<:Real,N}(X::AbstractArray{T,N}, offset, scale, ::ObsDim.Last, operate_on)
-    StandardScaler(offset, scale, ObsDim.Constant{N}(), operate_on)
+function StandardScaler(D::AbstractDataFrame, operate_on::Vector{Symbol})
+    colnames = valid_columns(D, operate_on)
+    offset = Float64[mean(D[colname]) for colname in colnames]
+    scale = Float64[std(D[colname]) for colname in colnames]
+    StandardScaler(offset, scale, ObsDim.Constant{1}(), colnames)
 end
 
-function StandardScaler(D::AbstractDataFrame; operate_on=default_scalerange(D))
-    offset = Float64[mean(D[colname]) for colname in operate_on]
-    scale = Float64[std(D[colname]) for colname in operate_on]
-    StandardScaler(offset, scale, ObsDim.Constant{1}(), operate_on)
+function StandardScaler(D::AbstractDataFrame, offset, scale; operate_on=default_scaleselection(D))
+    colnames = valid_columns(D)
+    StandardScaler(offset, scale, ObsDim.Constant{1}(), colnames)
 end
 
-function StandardScaler(D::AbstractDataFrame, offset, scale; operate_on=default_scalerange(D))
-    StandardScaler(offset, scale, ObsDim.Constant{1}(), operate_on)
+function StatsBase.fit{T<:Real}(::Type{StandardScaler}, X::AbstractMatrix{T}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+    StandardScaler(X, convert(ObsDimension, obsdim), operate_on)
 end
 
-function StatsBase.fit{T<:Real}(::Type{StandardScaler}, X::AbstractMatrix{T}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scalerange(X, convert(ObsDimension, obsdim)))
-    StandardScaler(X, obsdim, operate_on)
+function StatsBase.fit(::Type{StandardScaler}, D::AbstractDataFrame; operate_on=default_scaleselection(D))
+    StandardScaler(D, operate_on)
 end
 
 function transform!{T<:AbstractFloat,N}(X::AbstractArray{T,N}, cs::StandardScaler)
@@ -173,12 +274,12 @@ function transform!{T<:AbstractFloat,N}(X::AbstractArray{T,N}, cs::StandardScale
 end
 
 function transform!(D::AbstractDataFrame, cs::StandardScaler)
-    standardize!(D, cs.operate_on, cs.offset, cs.scale)
+    standardize!(D, cs.offset, cs.scale, cs.operate_on)
     D
 end
 
 function transform{T<:AbstractFloat,N}(X::AbstractArray{T,N}, cs::StandardScaler)
-    Xnew = copy(X)
+    Xnew = deepcopy(X)
     transform!(Xnew, cs)
 end
 
@@ -189,7 +290,7 @@ function transform{T<:Real,N}(X::AbstractArray{T,N}, cs::StandardScaler)
 end
 
 function transform(D::AbstractDataFrame, cs::StandardScaler)
-    Dnew = copy(D)
+    Dnew = deepcopy(D)
     transform!(Dnew, cs)
     Dnew
 end

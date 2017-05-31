@@ -1,38 +1,38 @@
 """
-    lower, upper, xmin, xmax = fixedrange!(X[, lower, upper, xmin, xmax; obsdim])
+    lower, upper, xmin, xmax = fixedrange!(X[, lower, upper, xmin, xmax; obsdim, operate_on])
 
-Rescale `X` to the interval (lower:upper) along `obsdim`. If `upper` and `lower` are not
-provided they default to 0 and 1 respectively, rescaling the data to the unit range (0:1).
-`xmin` and `xmax` are vectors consisiting of the maximum and minimum values of `X` along obsdim.
-`xmin`, `xmax` default to minimum(X, obsdim) and maximum(X, obsdim) respectively.
-`obsdim` refers to the dimension of observations, e.g. `obsdim`=1 if the rows of `X` correspond to
-measurements. `obsdim`=2 if columns of `X` represent measurements.
+or
 
-Examples:
-
-    X = rand(10, 4)
-
-    fixedrange!(X, obsdim=1)
-    fixedrange!(X, -1, 1, obsdim=2)
+    lower, upper, xmin, xmax = fixedrange!(D[, lower, upper, xmin, xmax; operate_on])
 
 
 where `X` is of type Matrix or Vector and `D` of type DataFrame.
+Normalize `X` or `D` along `obsdim` to the interval [lower:upper].
+If `lower` and `upper`  are omitted the default range is [0:1].
 
-Center `X` along `obsdim` around the corresponding entry in the
-vector `μ`.
 
+`lower`     :  (Scalar) Lower limit of new range.
+               Defaults to 0.
 
-`μ`         :  Vector or value describing the center.
-               Defaults to mean(X, 2)
+`upper`     :  (Scalar) Upper limit of new range.
+               Defaults to 1.
+
+`xmin`      :  (Vector) Minimum values of data before normalization. `xmin` will
+               correspond to `lower` after transformation.
+               Defaults to `minimum(X, obsdim)`.
+
+`xmin`      :  (Vector) Maximum value of data before normalization. `xmax` will
+               correspond to `upper` after transformation.
+               Defaults to `maximum(X, obsdim)`.
 
 `obsdim`    :  Specify which axis corresponds to observations.
                Defaults to obsdim=2 (observations are columns of matrix)
-               For DataFrames `obsdim` is obsolete and centering occurs
+               For DataFrames `obsdim` is obsolete and rescaling occurs
                column wise.
 
 `operate_on`:  Specify the indices of columns or rows to be centered.
                Defaults to all columns/rows.
-               For DataFrames this must be a vector of symbols, not indices
+               For DataFrames this must be a vector of symbols, not indices.
                E.g. `operate_on`=[1,3] will perform centering on columns
                with index 1 and 3 only (if obsdim=1, else rows 1 and 3)
 
@@ -47,16 +47,17 @@ Examples:
     x = rand(10)
     D = DataFrame(A=rand(10), B=collect(1:10), C=[string(x) for x in 1:10])
 
-    μ = center!(X, obsdim=2)
-    μ = center!(X, ObsDim.First())
-    μ = center!(X, obsdim=1, operate_on=[1,3]
-    μ = center!(X, [7.0, 8.0], obsdim=1, operate_on=[1,3]
-    μ = center!(D)
-    μ = center!(D, operate_on=[:A, :B])
-    μ = center!(D, [-1,-1], operate_on=[:A, :B])
-"""
+    lower, upper, xmin, xmax = fixedrange!(X)
+    lower, upper, xmin, xmax = fixedrange!(X, -1, 1)
+    lower, upper, xmin, xmax = fixedrange!(X, -1, 1, obsdim=1)
+    lower, upper, xmin, xmax = fixedrange!(X, -1, 1, obsdim=1, operate_on=[1,4])
+    
 
-function fixedrange!(X; obsdim=LearnBase.default_obsdim(X), operate_on=default_scalerange(X, convert(ObsDimension, obsdim)))
+    lower, upper, xmin, xmax = fixedrange!(D)
+    lower, upper, xmin, xmax = fixedrange!(D, -1, 1)
+    lower, upper, xmin, xmax = fixedrange!(D, -1, 1, operate_on=[:A,:B])
+"""
+function fixedrange!(X; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     fixedrange!(X, convert(ObsDimension, obsdim), operate_on)
 end
 
@@ -72,7 +73,7 @@ function fixedrange!{M}(X, obsdim::ObsDim.Constant{M}, operate_on)
     fixedrange!(X, lower, upper, xmin, xmax, obsdim, operate_on)
 end
 
-function fixedrange!(X, lower, upper; obsdim=LearnBase.default_obsdim(X), operate_on=default_scalerange(X, convert(ObsDimension, obsdim)))
+function fixedrange!(X, lower, upper; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     fixedrange!(X, lower, upper, convert(ObsDimension, obsdim), operate_on)
 end
 
@@ -86,7 +87,7 @@ function fixedrange!{T,M}(X::AbstractArray{T,M}, lower, upper, obsdim::ObsDim.La
     fixedrange!(X, lower, upper, ObsDim.Constant{M}(), operate_on)
 end
 
-function fixedrange!(X, lower, upper, xmin, xmax; obsdim=LearnBase.default_obsdim(X), operate_on=default_scalerange(X, convert(ObsDimension, obsdim)))
+function fixedrange!(X, lower, upper, xmin, xmax; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     fixedrange!(X, lower, upper, xmin, xmax, convert(ObsDimension, obsdim), operate_on)
 end
 
@@ -149,11 +150,11 @@ end
 
 # --------------------------------------------------------------------
 
-function fixedrange!(D::AbstractDataFrame; operate_on=default_scalerange(D))
+function fixedrange!(D::AbstractDataFrame; operate_on=default_scaleselection(D))
     fixedrange!(D, 0, 1, operate_on)
 end
 
-function fixedrange!(D::AbstractDataFrame, lower, upper; operate_on=default_scalerange(D))
+function fixedrange!(D::AbstractDataFrame, lower, upper; operate_on=default_scaleselection(D))
     fixedrange!(D, lower, upper, operate_on)
 end
 
@@ -179,7 +180,7 @@ function fixedrange!(D::AbstractDataFrame, lower::Real, upper::Real, operate_on:
     lower, upper, xmin, xmax 
 end
 
-function fixedrange!(D::AbstractDataFrame, lower, upper, xmin, xmax; operate_on=default_scalerange(D))
+function fixedrange!(D::AbstractDataFrame, lower, upper, xmin, xmax; operate_on=default_scaleselection(D))
     fixedrange!(D, lower, upper, xmin, xmax, operate_on)
 end
 
@@ -202,6 +203,68 @@ function fixedrange!(D::AbstractDataFrame, lower::Real, upper::Real, xmin::Real,
     lower, upper, xmin, xmax, colname
 end
 
+
+"""
+`FixedRangeScaler` is used with the functions `fit()` and `transform()`.
+After fitting a `FixedRangeScaler` to one data set, it can be used to perform the same
+transformation to a new set of data. E.g. fit the `FixedRangeScaler` to your training
+data and then apply the scaling to the test data at a later stage. (See examples below).
+
+    fit(FixedRangeScaler, X[, lower, upper; obsdim, operate_on])
+
+`X`         :  Data of type Matrix or `DataFrame`.
+
+`lower`     :  (Scalar) Lower limit of new range.
+               Defaults to 0.
+
+`upper`     :  (Scalar) Upper limit of new range.
+               Defaults to 1.
+
+`xmin`      :  (Vector) Minimum values of data before normalization. `xmin` will
+               correspond to `lower` after transformation.
+               Defaults to `minimum(X, obsdim)`.
+
+`xmin`      :  (Vector) Maximum value of data before normalization. `xmax` will
+               correspond to `upper` after transformation.
+               Defaults to `maximum(X, obsdim)`.
+
+`obsdim`    :  Specify which axis corresponds to observations.
+               Defaults to obsdim=2 (observations are columns of matrix)
+               For DataFrames `obsdim` is obsolete and rescaling occurs
+               column wise.
+
+`operate_on`:  Specify the indices of columns or rows to be centered.
+               Defaults to all columns/rows.
+               For DataFrames this must be a vector of symbols, not indices.
+               E.g. `operate_on`=[1,3] will perform centering on columns
+               with index 1 and 3 only (if obsdim=1, else rows 1 and 3)
+
+Note on DataFrames:
+Columns containing `NA` values are skipped.
+Columns containing non numeric elements are skipped.
+
+Examples:
+
+
+    Xtrain = rand(100, 4)
+    Xtest  = rand(10, 4)
+    x = rand(10)
+    D = DataFrame(A=rand(10), B=collect(1:10), C=[string(x) for x in 1:10])
+
+    scaler = fit(FixedRangeScaler, Xtrain)
+    scaler = fit(FixedRangeScaler, Xtrain, -1, 1)
+    scaler = fit(FixedRangeScaler, Xtrain, -1, 1, obsdim=1)
+    scaler = fit(FixedRangeScaler, Xtrain, -1, 1, obsdim=1, operate_on=[1,3])
+    scaler = fit(FixedRangeScaler, D, -1, 1, operate_on=[:A,:B])
+
+    transform(Xtest, scaler)
+    transform!(Xtest, scaler)
+
+Note that for `transform!` the data matrix `X` has to be of type <: AbstractFloat
+as the scaling occurs inplace. (E.g. cannot be of type Matrix{Int64}). This is not
+the case for `transform` however.
+For `DataFrames` `transform!` can be used on columns of type <: Integer.
+"""
 immutable FixedRangeScaler{T<:Real,U<:Real,V<:Real,W<:Real,M,I}
     lower::T
     upper::U
@@ -211,7 +274,7 @@ immutable FixedRangeScaler{T<:Real,U<:Real,V<:Real,W<:Real,M,I}
     operate_on::Vector{I}
 end
 
-function FixedRangeScaler{T<:Real,N}(X::AbstractArray{T,N}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scalerange(X, convert(ObsDimension, obsdim)))
+function FixedRangeScaler{T<:Real,N}(X::AbstractArray{T,N}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     FixedRangeScaler(X, convert(ObsDimension, obsdim), operate_on)
 end
 
@@ -225,7 +288,7 @@ function FixedRangeScaler{T<:Real,N}(X::AbstractArray{T,N}, ::ObsDim.Last, opera
     FixedRangeScaler(X, ObsDim.Constant{N}(), operate_on)
 end
 
-function FixedRangeScaler{T<:Real,N}(X::AbstractArray{T,N}, lower, upper; obsdim=LearnBase.default_obsdim(X), operate_on=default_scalerange(X, convert(ObsDimension, obsdim)))
+function FixedRangeScaler{T<:Real,N}(X::AbstractArray{T,N}, lower, upper; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     FixedRangeScaler(X, lower, upper, convert(ObsDimension, obsdim), operate_on)
 end
 
@@ -239,28 +302,29 @@ function FixedRangeScaler{T<:Real,N}(X::AbstractArray{T,N}, lower, upper, ::ObsD
     FixedRangeScaler(X, lower, upper, ObsDim.Constant{N}(), operate_on)
 end
 
-function FixedRangeScaler(D::AbstractDataFrame; operate_on=default_scalerange(D))
+function FixedRangeScaler(D::AbstractDataFrame; operate_on=default_scaleselection(D))
     FixedRangeScaler(D, 0, 1, operate_on)
 end
 
-function FixedRangeScaler(D::AbstractDataFrame, lower::Real, upper::Real;  operate_on=default_scalerange(D))
+function FixedRangeScaler(D::AbstractDataFrame, lower::Real, upper::Real; operate_on=default_scaleselection(D))
     FixedRangeScaler(D, lower, upper, operate_on)
 end
 
-function FixedRangeScaler(D::AbstractDataFrame, lower::Real, upper::Real,  operate_on::AbstractVector{Symbol})
+function FixedRangeScaler(D::AbstractDataFrame, lower::Real, upper::Real, operate_on::AbstractVector{Symbol})
     xmin = Float64[]
     xmax = Float64[]
-    for colname in operate_on 
+    colnames = valid_columns(D, operate_on)
+    for colname in colnames 
         push!(xmin, minimum(D[colname]))
         push!(xmax, maximum(D[colname]))
     end
-    FixedRangeScaler(lower, upper, xmin, xmax, ObsDim.Constant{1}(), operate_on)
+    FixedRangeScaler(lower, upper, xmin, xmax, ObsDim.Constant{1}(), colnames)
 end
 
 function valid_columns(D::AbstractDataFrame)
     valid_colnames = Symbol[]
     for colname in names(D)
-        if (eltype(D[colname]) <: Real) & !(any(isnull(D[colname])))
+        if (eltype(D[colname]) <: Real) & !(any(isna(D[colname])))
             push!(valid_colnames, colname)
         else
             warn("Skipping \"$colname\" because it either contains NA or is not of type <: Real")
@@ -269,19 +333,31 @@ function valid_columns(D::AbstractDataFrame)
     valid_colnames
 end
 
-function StatsBase.fit{T<:Real,N}(::Type{FixedRangeScaler}, X::AbstractArray{T,N}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scalerange(X, convert(ObsDimension, obsdim)))
+function valid_columns(D::AbstractDataFrame, colnames)
+    valid_colnames = Symbol[]
+    for colname in colnames
+        if (eltype(D[colname]) <: Real) & !(any(isna(D[colname])))
+            push!(valid_colnames, colname)
+        else
+            warn("Skipping \"$colname\" because it either contains NA or is not of type <: Real")
+        end
+    end
+    valid_colnames
+end
+
+function StatsBase.fit{T<:Real,N}(::Type{FixedRangeScaler}, X::AbstractArray{T,N}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     FixedRangeScaler(X, convert(ObsDimension, obsdim), operate_on)
 end
 
-function StatsBase.fit{T<:Real,N}(::Type{FixedRangeScaler}, X::AbstractArray{T,N}, lower, upper; obsdim=LearnBase.default_obsdim(X), operate_on=default_scalerange(X, convert(ObsDimension, obsdim)))
+function StatsBase.fit{T<:Real,N}(::Type{FixedRangeScaler}, X::AbstractArray{T,N}, lower, upper; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     FixedRangeScaler(X, lower, upper, convert(ObsDimension, obsdim), operate_on)
 end
 
-function StatsBase.fit(::Type{FixedRangeScaler}, D::AbstractDataFrame; operate_on=default_scalerange(D))
+function StatsBase.fit(::Type{FixedRangeScaler}, D::AbstractDataFrame; operate_on=default_scaleselection(D))
     FixedRangeScaler(D, 0, 1, operate_on)
 end
 
-function StatsBase.fit(::Type{FixedRangeScaler}, D::AbstractDataFrame, lower, upper; operate_on=default_scalerange(D))
+function StatsBase.fit(::Type{FixedRangeScaler}, D::AbstractDataFrame, lower, upper; operate_on=default_scaleselection(D))
     FixedRangeScaler(D, lower, upper, operate_on)
 end
 

@@ -22,16 +22,10 @@ export
     transform,
     transform!
 
-    #= rescale!, =#
-    #= FeatureNormalizer, =#
-    #= predict, =#
-    #= predict! =#
     
-include("scalerange.jl")
+include("scaleselection.jl")
 include("basis_expansion.jl")
 include("center.jl")
-#include("rescale.jl")
-#include("featurenormalizer.jl")
 include("standardize.jl")
 include("fixedrange.jl")
 

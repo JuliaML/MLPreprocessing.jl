@@ -86,9 +86,41 @@ D_NA[1, :A] = NA
     xx = deepcopy(x)
     mu = ones(xx)
     center!(xx, mu)
-    @test mean(xx) - mean(x) ≈ -1e_x = collect(-2:0.5:10)
+    @test mean(xx) - mean(x) ≈ -1
 end
 
 @testset "DataFrame" begin
     # Center DataFrame
+    DD = deepcopy(D)
+    center!(DD)
+    @test abs(mean(DD[:A])) <= 10e-10
+    @test abs(mean(DD[:B])) <= 10e-10
+    @test all(DD[:C] .== D[:C])
+
+    DD = deepcopy(D)
+    center!(DD, operate_on=[:B])
+    @test all(DD[:A] .== D[:A])
+    @test abs(mean(DD[:B])) <= 10e-10
+    @test all(DD[:C] .== D[:C])
+
+    DD = deepcopy(D)
+    mu = center!(DD, operate_on=[:A, :B])
+    @test abs(mean(DD[:A])) <= 10e-10
+    @test abs(mean(DD[:B])) <= 10e-10
+    @test all(DD[:C] .== D[:C])
+    @test all(mu .== [mean(D[:A]), mean(D[:B])])
+
+    DD = deepcopy(D)
+    mu =  [mean(D[:A]), mean(D[:B])]
+    @test all(center!(DD, mu, operate_on=[:A, :B]) .== mu)
+    @test abs(mean(DD[:A])) <= 10e-10
+    @test abs(mean(DD[:B])) <= 10e-10
+    @test all(DD[:C] .== D[:C])
+    
+    DD = deepcopy(D_NA)
+    center!(DD)
+    @test all(DD[2:end, :A] .== D[2:end, :A])
+    @test abs(mean(DD[:B])) <= 10e-10
+    @test all(DD[:C] .== D[:C])
+    @test isna(DD[1, :A])
 end
