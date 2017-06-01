@@ -72,23 +72,23 @@ D_NA[1, :A] = NA
     standardize!(XX, mu[flt], sigma[flt], obsdim=2, operate_on=flt)
     @test abs(sum(mean(XX[flt,:], 2))) <= 10e-10
 
-    scaler = fit(StandardScaler, X)
+    scaler = fit(X, StandardScaler)
     XX = transform(X, scaler)
     @test abs(sum(mean(XX, 2))) <= 10e-10
     @test std(XX, 2) ≈ ones(size(X, 1)) 
 
-    scaler = fit(StandardScaler, X, obsdim=2)
+    scaler = fit(X, StandardScaler, obsdim=2)
     XX = transform(X, scaler)
     @test abs(sum(mean(XX, 2))) <= 10e-10
     @test std(XX, 2) ≈ ones(size(X, 1)) 
 
-    scaler = fit(StandardScaler, X, obsdim=1)
+    scaler = fit(X, StandardScaler, obsdim=1)
     XX = transform(X, scaler)
     @test abs(sum(mean(XX, 1))) <= 10e-10
     @test vec(std(XX, 1)) ≈ ones(size(X, 2)) 
 
     flt = [1,4]
-    scaler = fit(StandardScaler, X, obsdim=1, operate_on=flt)
+    scaler = fit(X, StandardScaler, obsdim=1, operate_on=flt)
     XX = transform(X, scaler)
     xx = transform(vec(X[1,:]), scaler)
     @test abs(sum(mean(XX[:,flt], 1))) <= 10e-10
@@ -98,7 +98,7 @@ D_NA[1, :A] = NA
     XX = deepcopy(X)
     xx = vec(X[1,:])
     flt = [1,4]
-    scaler = fit(StandardScaler, X, obsdim=1, operate_on=flt)
+    scaler = fit(X, StandardScaler, obsdim=1, operate_on=flt)
     transform!(XX, scaler)
     transform!(xx, scaler)
     @test abs(sum(mean(XX[:,flt], 1))) <= 10e-10
@@ -130,7 +130,7 @@ end
     @test abs(mean(DD[:B])) < 10e-10
     @test abs(std(DD[:B])) - 1 < 10e-10
 
-    scaler = fit(StandardScaler, D)
+    scaler = fit(D, StandardScaler)
     DD = transform(D, scaler)
     @test mean(DD[:A]) <= 10e-10 
     @test std(DD[:A]) - 1  <= 10e-10 
@@ -138,7 +138,7 @@ end
     @test std(DD[:B]) - 1  <= 10e-10 
     @test all(DD[:C] .== D[:C])
 
-    scaler = fit(StandardScaler, D, operate_on=[:A, :C])
+    scaler = fit(D, StandardScaler, operate_on=[:A, :C])
     DD = transform(D, scaler)
     @test mean(DD[:A]) <= 10e-10 
     @test std(DD[:A]) - 1  <= 10e-10 
@@ -147,7 +147,7 @@ end
     @test mean(D[:A]) != mean(DD[:A]) 
 
     DD = deepcopy(D)
-    scaler = fit(StandardScaler, DD, operate_on=[:A, :C])
+    scaler = fit(DD, StandardScaler, operate_on=[:A, :C])
     transform!(DD, scaler)
     @test mean(DD[:A]) <= 10e-10 
     @test std(DD[:A]) - 1  <= 10e-10 

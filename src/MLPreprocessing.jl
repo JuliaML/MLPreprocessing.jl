@@ -19,10 +19,12 @@ export
     StandardScaler,
     FixedRangeScaler,
     fit,
+    fit_transform,
+    fit_transform!,
     transform,
     transform!
 
-    
+ 
 include("scaleselection.jl")
 include("basis_expansion.jl")
 include("center.jl")

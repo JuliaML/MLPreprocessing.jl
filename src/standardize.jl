@@ -166,12 +166,15 @@ function standardize!(D::AbstractDataFrame, μ::Real, σ::Real, colname::Symbol)
 end
 
 """
-`StandardScaler` is used with the functions `fit()` and `transform()`.
+`StandardScaler` is used with the functions `fit()`, `transform()` and `fit_transform()`
+to standardize data in a Matrix `X` or DataFrame according to Xnew = (X - μ) / σ.
 After fitting a `StandardScaler` to one data set, it can be used to perform the same
 transformation to a new set of data. E.g. fit the `StandardScaler` to your training
 data and then apply the scaling to the test data at a later stage. (See examples below).
 
-    fit(StandardScaler, X[, μ, σ; obsdim, operate_on])
+    fit(X, StandardScaler[, μ, σ; obsdim, operate_on])
+
+    fit_transform(X, StandardScaler[, μ, σ; obsdim, operate_on])
 
 `X`         :  Data of type Matrix or `DataFrame`.
 
@@ -218,6 +221,9 @@ Examples:
     transform(Dtest, scaler)
     transform!(Dtest, scaler)
 
+    Xscaled, scaler = fit_transform(X, StandardScaler, obsdim=1, operate_on=[1,2,4])
+    scaler = fit_transform!(X, StandardScaler, obsdim=1, operate_on=[1,2,4])
+
 Note that for `transform!` the data matrix `X` has to be of type <: AbstractFloat
 as the scaling occurs inplace. (E.g. cannot be of type Matrix{Int64}). This is not
 the case for `transform` however.
@@ -260,33 +266,33 @@ function StandardScaler(D::AbstractDataFrame, offset, scale; operate_on=default_
     StandardScaler(offset, scale, ObsDim.Constant{1}(), colnames)
 end
 
-function StatsBase.fit{T<:Real}(::Type{StandardScaler}, X::AbstractMatrix{T}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function StatsBase.fit{T<:Real}(X::AbstractMatrix{T}, ::Type{StandardScaler}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     StandardScaler(X, convert(ObsDimension, obsdim), operate_on)
 end
 
-function fit_transform{T<:Real}(::Type{StandardScaler}, X::AbstractMatrix{T}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function fit_transform{T<:Real}(X::AbstractMatrix{T}, ::Type{StandardScaler}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     scaler = StandardScaler(X, convert(ObsDimension, obsdim), operate_on)
     Xnew = transform(X, scaler)
     return Xnew, scaler
 end
 
-function fit_transform!{T<:Real}(::Type{StandardScaler}, X::AbstractMatrix{T}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function fit_transform!{T<:Real}(X::AbstractMatrix{T}, ::Type{StandardScaler}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     scaler = StandardScaler(X, convert(ObsDimension, obsdim), operate_on)
     transform!(X, scaler)
     return scaler
 end
 
-function StatsBase.fit(::Type{StandardScaler}, D::AbstractDataFrame; operate_on=default_scaleselection(D))
+function StatsBase.fit(D::AbstractDataFrame, ::Type{StandardScaler}; operate_on=default_scaleselection(D))
     StandardScaler(D, operate_on)
 end
 
-function fit_transform(::Type{StandardScaler}, D::AbstractDataFrame; operate_on=default_scaleselection(D))
+function fit_transform(D::AbstractDataFrame, ::Type{StandardScaler}; operate_on=default_scaleselection(D))
     scaler = StandardScaler(D, operate_on)
     Dnew = transform(D, scaler)
     return Dnew, scaler
 end
 
-function fit_transform!(::Type{StandardScaler}, D::AbstractDataFrame; operate_on=default_scaleselection(D))
+function fit_transform!(D::AbstractDataFrame, ::Type{StandardScaler}; operate_on=default_scaleselection(D))
     scaler = StandardScaler(D, operate_on)
     transform!(D, scaler)
     return scaler

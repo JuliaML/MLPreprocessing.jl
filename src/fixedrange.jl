@@ -205,12 +205,15 @@ end
 
 
 """
-`FixedRangeScaler` is used with the functions `fit()` and `transform()`.
+`FixedRangeScaler` is used with the functions `fit()`, `transform()` and `fit_transform()`
+to scale data in a Matrix `X` or DataFrame to a fixed range [lower:upper].
 After fitting a `FixedRangeScaler` to one data set, it can be used to perform the same
 transformation to a new set of data. E.g. fit the `FixedRangeScaler` to your training
 data and then apply the scaling to the test data at a later stage. (See examples below).
 
-    fit(FixedRangeScaler, X[, lower, upper; obsdim, operate_on])
+    fit(X, FixedRangeScaler[, lower, upper; obsdim, operate_on])
+
+    fit_transform(X, FixedRangeScaler[, lower, upper; obsdim, operate_on])
 
 `X`         :  Data of type Matrix or `DataFrame`.
 
@@ -249,8 +252,13 @@ Examples:
     scaler = fit(FixedRangeScaler, Xtrain, -1, 1, obsdim=1, operate_on=[1,3])
     scaler = fit(FixedRangeScaler, D, -1, 1, operate_on=[:A,:B])
 
-    transform(Xtest, scaler)
+    Xscaled = transform(Xtest, scaler)
     transform!(Xtest, scaler)
+
+    Xscaled, scaler = fit_transform(X, FixedRangeScaler, -1, 1, obsdim=1, operate_on=[1,2,4])
+    scaler = fit_transform!(X, FixedRangeScaler, -1, 1, obsdim=1, operate_on=[1,2,4])
+
+
 
 Note that for `transform!` the data matrix `X` has to be of type <: AbstractFloat
 as the scaling occurs inplace. (E.g. cannot be of type Matrix{Int64}). This is not
@@ -313,65 +321,65 @@ function FixedRangeScaler(D::AbstractDataFrame, lower::Real, upper::Real, operat
     FixedRangeScaler(lower, upper, xmin, xmax, ObsDim.Constant{1}(), colnames)
 end
 
-function StatsBase.fit{T<:Real,N}(::Type{FixedRangeScaler}, X::AbstractArray{T,N}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function StatsBase.fit{T<:Real,N}(X::AbstractArray{T,N}, ::Type{FixedRangeScaler}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     FixedRangeScaler(X, convert(ObsDimension, obsdim), operate_on)
 end
 
-function fit_transform{T<:Real,N}(::Type{FixedRangeScaler}, X::AbstractArray{T,N}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function fit_transform{T<:Real,N}(X::AbstractArray{T,N}, ::Type{FixedRangeScaler}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     scaler = FixedRangeScaler(X, convert(ObsDimension, obsdim), operate_on)
     Xnew = transform(X, scaler)
     return Xnew, scaler
 end
 
-function fit_transform!{T<:Real,N}(::Type{FixedRangeScaler}, X::AbstractArray{T,N}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function fit_transform!{T<:Real,N}(X::AbstractArray{T,N}, ::Type{FixedRangeScaler}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     scaler = FixedRangeScaler(X, convert(ObsDimension, obsdim), operate_on)
     transform!(X, scaler)
     return scaler
 end
 
-function StatsBase.fit{T<:Real,N}(::Type{FixedRangeScaler}, X::AbstractArray{T,N}, lower, upper; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function StatsBase.fit{T<:Real,N}(X::AbstractArray{T,N}, ::Type{FixedRangeScaler}, lower, upper; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     FixedRangeScaler(X, lower, upper, convert(ObsDimension, obsdim), operate_on)
 end
 
-function fit_transform{T<:Real,N}(::Type{FixedRangeScaler}, X::AbstractArray{T,N}, lower, upper; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function fit_transform{T<:Real,N}(X::AbstractArray{T,N}, ::Type{FixedRangeScaler}, lower, upper; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     scaler = FixedRangeScaler(X, lower, upper, convert(ObsDimension, obsdim), operate_on)
     Xnew = transform(X, scaler)
     return Xnew, scaler
 end
 
-function fit_transform!{T<:Real,N}(::Type{FixedRangeScaler}, X::AbstractArray{T,N}, lower, upper; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function fit_transform!{T<:Real,N}(X::AbstractArray{T,N}, ::Type{FixedRangeScaler}, lower, upper; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     scaler = FixedRangeScaler(X, lower, upper, convert(ObsDimension, obsdim), operate_on)
     transform!(X, scaler)
     return scaler
 end
 
-function StatsBase.fit(::Type{FixedRangeScaler}, D::AbstractDataFrame; operate_on=default_scaleselection(D))
+function StatsBase.fit(D::AbstractDataFrame, ::Type{FixedRangeScaler}; operate_on=default_scaleselection(D))
     FixedRangeScaler(D, 0, 1, operate_on)
 end
 
-function fit_transform(::Type{FixedRangeScaler}, D::AbstractDataFrame; operate_on=default_scaleselection(D))
+function fit_transform(D::AbstractDataFrame, ::Type{FixedRangeScaler}; operate_on=default_scaleselection(D))
     scaler = FixedRangeScaler(D, 0, 1, operate_on)
     Dnew = transform(D, scaler)
     return Dnew, scaler
 end
 
-function fit_transform!(::Type{FixedRangeScaler}, D::AbstractDataFrame; operate_on=default_scaleselection(D))
+function fit_transform!(D::AbstractDataFrame, ::Type{FixedRangeScaler}; operate_on=default_scaleselection(D))
     scaler = FixedRangeScaler(D, 0, 1, operate_on)
     transform!(D, scaler)
     return scaler
 end
 
-function StatsBase.fit(::Type{FixedRangeScaler}, D::AbstractDataFrame, lower, upper; operate_on=default_scaleselection(D))
+function StatsBase.fit(D::AbstractDataFrame, ::Type{FixedRangeScaler}, lower, upper; operate_on=default_scaleselection(D))
     FixedRangeScaler(D, lower, upper, operate_on)
 end
 
-function fit_transform(::Type{FixedRangeScaler}, D::AbstractDataFrame, lower, upper; operate_on=default_scaleselection(D))
+function fit_transform(D::AbstractDataFrame, ::Type{FixedRangeScaler}, lower, upper; operate_on=default_scaleselection(D))
     scaler = FixedRangeScaler(D, lower, upper, operate_on)
     Dnew = transform(D, scaler)
     return Dnew, scaler
 end
 
-function fit_transform!(::Type{FixedRangeScaler}, D::AbstractDataFrame, lower, upper; operate_on=default_scaleselection(D))
+function fit_transform!(D::AbstractDataFrame, ::Type{FixedRangeScaler}, lower, upper; operate_on=default_scaleselection(D))
     scaler = FixedRangeScaler(D, lower, upper, operate_on)
     transform!(D, scaler)
     return scaler
