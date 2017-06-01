@@ -22,11 +22,12 @@ function default_scaleselection{M}(x::AbstractVector, ::ObsDim.Constant{M})
     collect(1:length(x))
 end
 
+function default_categoricalselection(D::AbstractDataFrame)
+    valid_columns_categorical(D::AbstractDataFrame)
+end
+
 function default_scaleselection(D::AbstractDataFrame)
-    flt1 = Bool[T <: Real for T in eltypes(D)]
-    flt2 = Bool[any(isna(D[colname])) for colname in names(D)]
-    flt = (flt1 & !flt2)
-    names(D)[flt]
+    valid_columns(D)
 end
 
 function valid_columns(D::AbstractDataFrame)
@@ -53,3 +54,16 @@ function valid_columns(D::AbstractDataFrame, colnames)
     valid_colnames
 end
 
+function valid_columns_categorical(D::AbstractDataFrame)
+    valid_colnames = Symbol[]
+    for colname in names(D)
+        if !(eltype(D[colname]) <: Real)
+            if !(any(isna(D[colname])))
+                push!(valid_colnames, colname)
+            else
+                warn("Skipping \"$colname\" because it contains NA")
+            end
+        end
+    end
+    valid_colnames
+end
