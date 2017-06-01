@@ -264,8 +264,32 @@ function StatsBase.fit{T<:Real}(::Type{StandardScaler}, X::AbstractMatrix{T}; ob
     StandardScaler(X, convert(ObsDimension, obsdim), operate_on)
 end
 
+function fit_transform{T<:Real}(::Type{StandardScaler}, X::AbstractMatrix{T}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+    scaler = StandardScaler(X, convert(ObsDimension, obsdim), operate_on)
+    Xnew = transform(X, scaler)
+    return Xnew, scaler
+end
+
+function fit_transform!{T<:Real}(::Type{StandardScaler}, X::AbstractMatrix{T}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+    scaler = StandardScaler(X, convert(ObsDimension, obsdim), operate_on)
+    transform!(X, scaler)
+    return scaler
+end
+
 function StatsBase.fit(::Type{StandardScaler}, D::AbstractDataFrame; operate_on=default_scaleselection(D))
     StandardScaler(D, operate_on)
+end
+
+function fit_transform(::Type{StandardScaler}, D::AbstractDataFrame; operate_on=default_scaleselection(D))
+    scaler = StandardScaler(D, operate_on)
+    Dnew = transform(D, scaler)
+    return Dnew, scaler
+end
+
+function fit_transform!(::Type{StandardScaler}, D::AbstractDataFrame; operate_on=default_scaleselection(D))
+    scaler = StandardScaler(D, operate_on)
+    transform!(D, scaler)
+    return scaler
 end
 
 function transform!{T<:AbstractFloat,N}(X::AbstractArray{T,N}, cs::StandardScaler)

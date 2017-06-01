@@ -5,8 +5,8 @@ using Base.Test
 tests = [
     "tst_expand.jl"
     "tst_center.jl"
-    "tst_fixedrangescaler.jl"
     "tst_standardize.jl"
+    "tst_fixedrangescaler.jl"
 ]
 
 for t in tests

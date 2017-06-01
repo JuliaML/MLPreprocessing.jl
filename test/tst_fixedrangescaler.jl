@@ -91,6 +91,13 @@ end
     @test minimum(DD[:B]) == -1 
     @test maximum(DD[:B]) == 1 
 
+    scaler = fit(FixedRangeScaler, D_NA, -1, 1, operate_on=[:A, :B, :C])
+    DD = transform(D_NA, scaler)
+    @test isna(DD[1,:A])
+    @test DD[end,:A] == D_NA[end,:A]
+    @test minimum(DD[:B]) == -1 
+    @test maximum(DD[:B]) == 1 
+
     DD = deepcopy(D)
     scaler = fit(FixedRangeScaler, DD, -1, 1, operate_on=[:A, :B])
     transform!(DD, scaler)
