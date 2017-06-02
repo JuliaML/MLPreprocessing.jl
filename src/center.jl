@@ -103,7 +103,7 @@ function center!(x::AbstractVector; obsdim=LearnBase.default_obsdim(x), operate_
     center!(x, convert(ObsDimension, obsdim), operate_on)
 end
 
-function center!{T,M}(x::AbstractVector{T}, ::ObsDim.Constant{M}, operate_on::AbstractVector)
+function center!(x::AbstractVector, ::ObsDim.Constant, operate_on::AbstractVector)
     μ = mean(x)
     for iVar in operate_on
         x[iVar] = x[iVar] - μ
