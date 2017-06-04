@@ -266,33 +266,33 @@ function StandardScaler(D::AbstractDataFrame, offset, scale; operate_on=default_
     StandardScaler(offset, scale, ObsDim.Constant{1}(), colnames)
 end
 
-function StatsBase.fit{T<:Real}(X::AbstractMatrix{T}, ::Type{StandardScaler}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function StatsBase.fit{T<:Real}(::Type{StandardScaler}, X::AbstractMatrix{T}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     StandardScaler(X, convert(ObsDimension, obsdim), operate_on)
 end
 
-function fit_transform{T<:Real}(X::AbstractMatrix{T}, ::Type{StandardScaler}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function fit_transform{T<:Real}(::Type{StandardScaler}, X::AbstractMatrix{T}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     scaler = StandardScaler(X, convert(ObsDimension, obsdim), operate_on)
     Xnew = transform(X, scaler)
     return Xnew, scaler
 end
 
-function fit_transform!{T<:Real}(X::AbstractMatrix{T}, ::Type{StandardScaler}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function fit_transform!{T<:Real}(::Type{StandardScaler}, X::AbstractMatrix{T}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
     scaler = StandardScaler(X, convert(ObsDimension, obsdim), operate_on)
     transform!(X, scaler)
     return scaler
 end
 
-function StatsBase.fit(D::AbstractDataFrame, ::Type{StandardScaler}; operate_on=default_scaleselection(D))
+function StatsBase.fit(::Type{StandardScaler}, D::AbstractDataFrame; operate_on=default_scaleselection(D))
     StandardScaler(D, operate_on)
 end
 
-function fit_transform(D::AbstractDataFrame, ::Type{StandardScaler}; operate_on=default_scaleselection(D))
+function fit_transform(::Type{StandardScaler}, D::AbstractDataFrame; operate_on=default_scaleselection(D))
     scaler = StandardScaler(D, operate_on)
     Dnew = transform(D, scaler)
     return Dnew, scaler
 end
 
-function fit_transform!(D::AbstractDataFrame, ::Type{StandardScaler}; operate_on=default_scaleselection(D))
+function fit_transform!(::Type{StandardScaler}, D::AbstractDataFrame; operate_on=default_scaleselection(D))
     scaler = StandardScaler(D, operate_on)
     transform!(D, scaler)
     return scaler
