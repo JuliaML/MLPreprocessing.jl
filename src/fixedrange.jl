@@ -211,9 +211,9 @@ After fitting a `FixedRangeScaler` to one data set, it can be used to perform th
 transformation to a new set of data. E.g. fit the `FixedRangeScaler` to your training
 data and then apply the scaling to the test data at a later stage. (See examples below).
 
-    fit(X, FixedRangeScaler[, lower, upper; obsdim, operate_on])
+    fit(FixedRangeScaler, X[, lower, upper; obsdim, operate_on])
 
-    fit_transform(X, FixedRangeScaler[, lower, upper; obsdim, operate_on])
+    fit_transform(FixedRangeScaler, X[, lower, upper; obsdim, operate_on])
 
 `X`         :  Data of type Matrix or `DataFrame`.
 
@@ -255,8 +255,8 @@ Examples:
     Xscaled = transform(Xtest, scaler)
     transform!(Xtest, scaler)
 
-    Xscaled, scaler = fit_transform(X, FixedRangeScaler, -1, 1, obsdim=1, operate_on=[1,2,4])
-    scaler = fit_transform!(X, FixedRangeScaler, -1, 1, obsdim=1, operate_on=[1,2,4])
+    Xscaled, scaler = fit_transform(FixedRangeScaler, X, -1, 1, obsdim=1, operate_on=[1,2,4])
+    scaler = fit_transform!(FixedRangeScaler, X, -1, 1, obsdim=1, operate_on=[1,2,4])
 
 
 

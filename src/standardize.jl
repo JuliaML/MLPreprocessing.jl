@@ -172,9 +172,9 @@ After fitting a `StandardScaler` to one data set, it can be used to perform the 
 transformation to a new set of data. E.g. fit the `StandardScaler` to your training
 data and then apply the scaling to the test data at a later stage. (See examples below).
 
-    fit(X, StandardScaler[, μ, σ; obsdim, operate_on])
+    fit(StandardScaler, X[, μ, σ; obsdim, operate_on])
 
-    fit_transform(X, StandardScaler[, μ, σ; obsdim, operate_on])
+    fit_transform(StandardScaler, X[, μ, σ; obsdim, operate_on])
 
 `X`         :  Data of type Matrix or `DataFrame`.
 
@@ -221,8 +221,8 @@ Examples:
     transform(Dtest, scaler)
     transform!(Dtest, scaler)
 
-    Xscaled, scaler = fit_transform(X, StandardScaler, obsdim=1, operate_on=[1,2,4])
-    scaler = fit_transform!(X, StandardScaler, obsdim=1, operate_on=[1,2,4])
+    Xscaled, scaler = fit_transform(StandardScaler, X, obsdim=1, operate_on=[1,2,4])
+    scaler = fit_transform!(StandardScaler, X, obsdim=1, operate_on=[1,2,4])
 
 Note that for `transform!` the data matrix `X` has to be of type <: AbstractFloat
 as the scaling occurs inplace. (E.g. cannot be of type Matrix{Int64}). This is not
