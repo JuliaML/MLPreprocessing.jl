@@ -5,7 +5,7 @@ or
 
     μ, σ = standardize!(D[, μ, σ; operate_on])
 
-Normalize `X` along `obsdim` according to X = (X - μ) / σ.
+Standardize `X` along `obsdim` according to X = (X - μ) / σ.
 If μ and σ are omitted they are computed such that variables have a mean of zero
 
 
