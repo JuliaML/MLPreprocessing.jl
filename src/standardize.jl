@@ -126,7 +126,7 @@ function standardize!(D::AbstractDataFrame, colnames::AbstractVector{Symbol})
         if eltype(D[colname]) <: Real
             μ = mean(D[colname])
             σ = std(D[colname])
-            if isna(μ)
+            if isna.(μ)
                 warn("Skipping \"$colname\" because it contains NA values")
                 continue
             end
@@ -152,7 +152,7 @@ function standardize!(D::AbstractDataFrame, μ::AbstractVector, σ::AbstractVect
 end
 
 function standardize!(D::AbstractDataFrame, μ::Real, σ::Real, colname::Symbol)
-    if any(isna(D[colname])) | !(eltype(D[colname]) <: Real)
+    if any(isna.(D[colname])) | !(eltype(D[colname]) <: Real)
         warn("Skipping \"$colname\" because it contains NA values or is not of type <: Real")
     else
         newcol::Vector{Float64} = convert(Vector{Float64}, D[colname])

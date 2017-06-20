@@ -79,21 +79,21 @@ end
 
     scaler = fit(FixedRangeScaler, D, -1, 1)
     DD = transform(D_NA, scaler)
-    @test isna(DD[1,:A])
+    @test isna.(DD[1,:A])
     @test DD[end,:A] == D_NA[end,:A]
     @test minimum(DD[:B]) == -1 
     @test maximum(DD[:B]) == 1 
 
     scaler = fit(FixedRangeScaler, D, -1, 1, operate_on=[:A, :B])
     DD = transform(D_NA, scaler)
-    @test isna(DD[1,:A])
+    @test isna.(DD[1,:A])
     @test DD[end,:A] == D_NA[end,:A]
     @test minimum(DD[:B]) == -1 
     @test maximum(DD[:B]) == 1 
 
     scaler = fit(FixedRangeScaler, D, -1, 1, operate_on=[:A, :B, :C])
     DD = transform(D_NA, scaler)
-    @test isna(DD[1,:A])
+    @test isna.(DD[1,:A])
     @test DD[end,:A] == D_NA[end,:A]
     @test minimum(DD[:B]) == -1 
     @test maximum(DD[:B]) == 1 
