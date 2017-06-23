@@ -125,7 +125,7 @@ end
     # skip columns that contain NA values
     DD = deepcopy(D_NA)
     mu, sigma = standardize!(DD)
-    @test isna.(DD[1, :A])
+    @test isna(DD[1, :A])
     @test all(DD[2:end, :A] .== D_NA[2:end, :A])
     @test abs(mean(DD[:B])) < 10e-10
     @test abs(std(DD[:B])) - 1 < 10e-10

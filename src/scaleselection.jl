@@ -33,7 +33,7 @@ end
 function valid_columns(D::AbstractDataFrame)
     valid_colnames = Symbol[]
     for colname in names(D)
-        if (eltype(D[colname]) <: Real) & !(any(isna.(D[colname])))
+        if (eltype(D[colname]) <: Real) & !any(isna, D[colname])
             push!(valid_colnames, colname)
         else
             warn("Skipping \"$colname\" because it either contains NA or is not of type <: Real")
@@ -45,7 +45,7 @@ end
 function valid_columns(D::AbstractDataFrame, colnames)
     valid_colnames = Symbol[]
     for colname in colnames
-        if (eltype(D[colname]) <: Real) & !(any(isna.(D[colname])))
+        if (eltype(D[colname]) <: Real) & !(any(isna, D[colname]))
             push!(valid_colnames, colname)
         else
             warn("Skipping \"$colname\" because it either contains NA or is not of type <: Real")
@@ -58,7 +58,7 @@ function valid_columns_categorical(D::AbstractDataFrame)
     valid_colnames = Symbol[]
     for colname in names(D)
         if !(eltype(D[colname]) <: Real)
-            if !(any(isna.(D[colname])))
+            if !(any(isna, D[colname]))
                 push!(valid_colnames, colname)
             else
                 warn("Skipping \"$colname\" because it contains NA")

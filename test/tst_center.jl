@@ -122,5 +122,5 @@ end
     @test all(DD[2:end, :A] .== D[2:end, :A])
     @test abs.(mean(DD[:B])) <= 10e-10
     @test all(DD[:C] .== D[:C])
-    @test isna.(DD[1, :A])
+    @test isna(DD[1, :A])
 end

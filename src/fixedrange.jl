@@ -166,7 +166,7 @@ function fixedrange!(D::AbstractDataFrame, lower::Real, upper::Real, operate_on:
         if eltype(D[colname]) <: Real
             minval = minimum(D[colname])
             maxval = maximum(D[colname])
-            if isna.(minval)
+            if isna(minval)
                 warn("Skipping \"$colname\" because it contains NA values")
                 continue
             end
@@ -193,7 +193,7 @@ function fixedrange!(D::AbstractDataFrame, lower::Real, upper::Real, xmin::Abstr
 end
 
 function fixedrange!(D::AbstractDataFrame, lower::Real, upper::Real, xmin::Real, xmax::Real, colname::Symbol)
-    if any(isna.(D[colname])) | !(eltype(D[colname]) <: Real)
+    if any(isna, D[colname]) | !(eltype(D[colname]) <: Real)
         warn("Skipping \"$colname\" because it contains NA values or is not of type <: Real")
     else
         newcol::Vector{Float64} = convert(Vector{Float64}, D[colname])

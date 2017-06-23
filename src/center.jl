@@ -145,7 +145,7 @@ function center!(D::AbstractDataFrame, operate_on::AbstractVector{Symbol})
     for colname in operate_on 
         if eltype(D[colname]) <: Real
             μ = mean(D[colname])
-            if isna.(μ)
+            if isna(μ)
                 warn("Skipping \"$colname\" because it contains NA values")
                 continue
             end
@@ -174,7 +174,7 @@ function center!(D::AbstractDataFrame, μ::AbstractVector, operate_on::AbstractV
 end
 
 function center!(D::AbstractDataFrame, μ::Real, colname::Symbol)
-    if sum(isna.(D[colname])) > 0
+    if sum([isna(value) for value in D[colname]]) > 0
         warn("Skipping \"$colname\" because it contains NA values")
     else
         newcol::Vector{Float64} = convert(Vector{Float64}, D[colname])
