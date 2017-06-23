@@ -162,18 +162,18 @@ If μ and σ are omitted they are computed such that variables have a mean of ze
 
 ### Polynomial Basis Expansion
 ```julia
-    M = expand_poly(x, [degree = 5], obsdim]) 
+    M = expand_poly(x[, degree=5, obsdim]) 
 ```
 Perform a polynomial basis expansion of the given `degree` for the vector `x`.
 
 ```julia
-julia> expand_poly(1:5, degree = 3)
+julia> expand_poly(1:5, degree=3)
 3×5 Array{Float64,2}:
  1.0  2.0   3.0   4.0    5.0
  1.0  4.0   9.0  16.0   25.0
  1.0  8.0  27.0  64.0  125.0
 
-julia> expand_poly(1:5, degree = 3, obsdim = 1)
+julia> expand_poly(1:5, degree=3, obsdim=1)
 5×3 Array{Float64,2}:
  1.0   1.0    1.0
  2.0   4.0    8.0
