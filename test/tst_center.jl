@@ -1,93 +1,126 @@
-e_x = collect(-2:0.5:10)
-e_X = expand_poly(e_x, 5)
-df = DataFrame(A=rand(10), B=collect(1:10), C=[string(x) for x in 1:10])
-df_na = deepcopy(df)
-df_na[1, :A] = NA
+X = collect(Float64, reshape(1:40, 10, 4))
+x = rand(10) * 10
+
+D = DataFrame(A=rand(10), B=collect(1:10), C=[hex(x) for x in 11:20])
+D_NA = deepcopy(D)
+D_NA[1, :A] = NA
 
 @testset "Array" begin
-    # Center Vectors
-    xa = copy(e_x)
-    @test center!(xa) ≈ mean(e_x)
-    @test abs(mean(xa)) <= 10e-10
+    XX = deepcopy(X)
+    mu = center!(XX, obsdim=1)
+    @test sum(abs.(mean(XX, 1))) == 0 
+    @test all(std(XX, 1) .== std(X, 1))
+    @test all(mu .== vec(mean(X, 1)))
 
-    xa = copy(e_x)
-    mu = mean(xa)
-    center!(xa, mu, obsdim=1)
-    @test abs(mean(xa)) <= 10e-10
+    XX = deepcopy(X)
+    mu = center!(XX, ObsDim.First())
+    @test sum(abs.(mean(XX, 1))) == 0 
+    @test all(std(XX, 1) .== std(X, 1))
+    @test all(mu .== vec(mean(X, 1)))
 
-    xa = copy(e_x)
-    mu = vec(ones(xa))
-    center!(xa, mu, obsdim=1)
-    @test sum(e_x .- mean(xa)) ≈ length(mu)
+    XX = deepcopy(X)
+    mu = center!(XX, ObsDim.Last())
+    @test sum(abs.(mean(XX, 2))) == 0 
+    @test all(std(XX, 2) .== std(X, 2))
+    @test all(mu .== vec(mean(X, 2)))
 
-    # Center Matrix w/o mu
-    Xa = copy(e_X)
-    center!(Xa)
-    @test abs(sum(mean(Xa, 2))) <= 10e-10
+    XX = deepcopy(X)
+    mu = center!(XX)
+    @test sum(abs.(mean(XX, 2))) == 0 
+    @test all(std(XX, 2) .== std(X, 2))
+    @test all(mu .== vec(mean(X, 2)))
 
-    Xa = copy(e_X)
-    center!(Xa, obsdim=1)
-    @test abs(sum(mean(Xa, 1))) <= 10e-10
+    XX = deepcopy(X)
+    mu = vec(mean(X, 1))
+    center!(XX, mu, obsdim=1)
+    @test sum(abs.(mean(XX, 1))) == 0 
+    @test all(std(XX, 1) .== std(X, 1))
 
-    Xa = copy(e_X)
-    center!(Xa, ObsDim.First())
-    @test abs(sum(mean(Xa, 1))) <= 10e-10
+    XX = deepcopy(X)
+    mu = vec(mean(X, 1))
+    center!(XX, mu, ObsDim.First())
+    @test sum(abs.(mean(XX, 1))) == 0 
+    @test all(std(XX, 1) .== std(X, 1))
 
-    Xa = copy(e_X)
-    center!(Xa, obsdim=2)
-    @test abs(sum(mean(Xa, 2))) <= 10e-10
+    XX = deepcopy(X)
+    mu = vec(mean(XX, 2))
+    center!(XX, mu, obsdim=2)
+    @test sum(abs.(mean(XX, 2))) == 0 
+    @test all(std(XX, 2) .== std(X, 2))
 
-    Xa = copy(e_X)
-    center!(Xa, ObsDim.Last())
-    @test abs(sum(mean(Xa, 2))) <= 10e-10
+    XX = deepcopy(X)
+    mu = vec(mean(XX, 2))
+    center!(XX, mu, ObsDim.Last())
+    @test sum(abs.(mean(XX, 2))) == 0 
+    @test all(std(XX, 2) .== std(X, 2))
 
+    XX = deepcopy(X)
+    mu = vec(mean(X[:,[1,3]], 1))
+    center!(XX, mu, obsdim=1, operate_on=[1, 3])
+    @test sum(abs.(mean(XX[:,[1,3]], 1))) == 0
+    @test all(XX[:,2] .== X[:,2])
+    @test all(std(XX, 1) .== std(X, 1))
 
-    # Center Matrix with mu as input
-    Xa = copy(e_X)
-    mu = vec(mean(Xa, 1))
-    center!(Xa, mu, obsdim=1)
-    @test abs(sum(mean(Xa, 1))) <= 10e-10
+    XX = deepcopy(X)
+    mu = vec(mean(X[[1,3],:], 2))
+    center!(XX, mu, obsdim=2, operate_on=[1, 3])
+    @test sum(abs.(mean(XX[[1,3],:], 2))) == 0
+    @test all(XX[2,:] .== X[2,:])
+    @test all(std(XX, 2) .== std(X, 2))
+    println()
 
-    Xa = copy(e_X)
-    mu = vec(mean(Xa, 2))
-    center!(Xa, mu, obsdim=2)
-    @test abs(sum(mean(Xa, 2))) <= 10e-10
+    xx = deepcopy(x)
+    center!(xx)
+    @test mean(xx) <= 10e-10
 
-    Xa = copy(e_X)
-    mu = vec(mean(Xa, 2))
-    center!(Xa, mu, ObsDim.Last())
-    @test abs(sum(mean(Xa, 2))) <= 10e-10
+    xx = deepcopy(x)
+    mu = mean(xx)
+    center!(xx, mu)
+    @test mean(xx) <= 10e-10
+
+    xx = deepcopy(x)
+    mu = ones(xx)
+    center!(xx, mu)
+    @test mean(xx) - mean(x) ≈ -1
+
+    xx = deepcopy(x)
+    mu = ones(xx)
+    center!(xx, mu)
+    @test mean(xx) - mean(x) ≈ -1
 end
 
 @testset "DataFrame" begin
     # Center DataFrame
-    D = copy(df)
-    mu_check = [mean(D[colname]) for colname in names(D)[1:2]]
-    mu = center!(D)
-    @test length(mu) == 2
-    @test abs(sum(mu .- mu_check)) <= 10e-10
+    DD = deepcopy(D)
+    center!(DD)
+    @test abs.(mean(DD[:A])) <= 10e-10
+    @test abs.(mean(DD[:B])) <= 10e-10
+    @test all(DD[:C] .== D[:C])
 
-    D = copy(df)
-    mu_check = [mean(D[colname]) for colname in names(D)[1:2]]
-    mu = center!(D, [:A, :B])
-    @test abs(sum(mu .- mu_check)) <= 10e-10
+    DD = deepcopy(D)
+    center!(DD, operate_on=[:B])
+    @test all(DD[:A] .== D[:A])
+    @test abs.(mean(DD[:B])) <= 10e-10
+    @test all(DD[:C] .== D[:C])
 
-    D = copy(df)
-    mu_check = [mean(D[colname]) for colname in names(D)[1:2]]
-    mu = center!(D, [:A, :B], mu_check)
-    @test abs(sum([mean(D[colname]) for colname in names(D)[1:2]])) <= 10e-10
+    DD = deepcopy(D)
+    mu = center!(DD, operate_on=[:A, :B])
+    @test abs.(mean(DD[:A])) <= 10e-10
+    @test abs.(mean(DD[:B])) <= 10e-10
+    @test all(DD[:C] .== D[:C])
+    @test all(mu .== [mean(D[:A]), mean(D[:B])])
 
-    # skip columns that contain NA values
-    D = copy(df_na)
-    mu = center!(D, [:A, :B])
-    @test isna(D[1, :A])
-    @test all(D[2:end, :A] .== df_na[2:end, :A])
-    @test abs(mean(D[:B])) < 10e-10
-
-    D = copy(df_na)
-    mu_check = [mean(D[colname]) for colname in names(D)[1:2]]
-    mu = center!(D, [:A, :B], mu_check)
-    @test isna(D[1, :A])
-    @test all(D[2:end, :A] .== df_na[2:end, :A])
-    @test abs(mean(D[:B])) < 10e-10
+    DD = deepcopy(D)
+    mu =  [mean(D[:A]), mean(D[:B])]
+    @test all(center!(DD, mu, operate_on=[:A, :B]) .== mu)
+    @test abs.(mean(DD[:A])) <= 10e-10
+    @test abs.(mean(DD[:B])) <= 10e-10
+    @test all(DD[:C] .== D[:C])
+    
+    DD = deepcopy(D_NA)
+    center!(DD)
+    @test all(DD[2:end, :A] .== D[2:end, :A])
+    @test abs.(mean(DD[:B])) <= 10e-10
+    @test all(DD[:C] .== D[:C])
+    @test isna(DD[1, :A])
 end
