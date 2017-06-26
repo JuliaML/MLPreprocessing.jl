@@ -123,10 +123,6 @@ function fixedrange!(X::AbstractMatrix, lower::Real, upper::Real, xmin::Abstract
     fixedrange!(X, lower, upper, xmin, xmax, ObsDim.Constant{2}(), operate_on)
 end
 
-function fixedrange!{T,M}(X::AbstractArray{T,M}, lower::Real, upper::Real, xmin::Real, xmax::Real, ::ObsDim.Last, operate_on::AbstractVector)
-    fixedrange!(X, lower, upper, xmin, xmax, ObsDim.Constant{M}(), operate_on)
-end
-
 function fixedrange!(x::AbstractVector; lower=0.0, upper=1.0)
     xmin = minimum(x)
     xmax = maximum(x)
