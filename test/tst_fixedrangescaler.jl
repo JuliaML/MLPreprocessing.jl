@@ -96,7 +96,7 @@ D_NA[1, :A] = NA
     @test mean(maximum(XX[[1,2],:], 2)) ≈ 2 
 
     Xi = round(Int, X)
-    transform(X, scaler)
+    transform(Xi, scaler)
     @test mean(minimum(XX[[1,2],:], 2)) ≈ -2 
     @test mean(maximum(XX[[1,2],:], 2)) ≈ 2 
 
