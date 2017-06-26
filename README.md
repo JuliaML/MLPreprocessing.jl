@@ -7,7 +7,11 @@
 ## Overview
 
 Utility package that provides end user friendly methods for feature scalings and polynomial
-basis expansion.
+basis expansion. Feature scalings work on `Matrix`, `Vector` and `DataFrames`. It is possible to
+have observations stored as columns or rows of a matrix. In order to distinguish between these cases
+one can provide the parameter `obsdim`, where `obsdim=1` corresponds to "observations as rows" and 
+`obsdim=2` to "observations as columns". Transformations can be computed on a subset
+of columns/rows by defining a vector `operate_on`.
 
 ### StandardScaler
 Standardization of data sets result in variables with a mean of 0 and variance of 1.
