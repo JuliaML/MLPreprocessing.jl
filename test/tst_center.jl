@@ -110,6 +110,26 @@ end
     @test all(DD[:C] .== D[:C])
     @test all(mu .== [mean(D[:A]), mean(D[:B])])
 
+    DD = deepcopy(D_NA)
+    mu = center!(DD, [:A, :B, :C])
+    @test abs.(mean(DD[:B])) <= 10e-10
+    @test all(DD[2:end, :A] .== D[2:end, :A])
+    @test all(DD[:C] .== D[:C])
+
+    DD = deepcopy(D_NA)
+    mu = [0.0, mean(DD[:B]), 0.0]
+    mu = center!(DD, mu, [:A, :B, :C])
+    @test abs.(mean(DD[:B])) <= 10e-10
+    @test all(DD[2:end, :A] .== D[2:end, :A])
+    @test all(DD[:C] .== D[:C])
+
+    DD = deepcopy(D_NA)
+    mu = 0.0 
+    mu = center!(DD, mu, :A)
+    @test all(DD[2:end, :A] .== D[2:end, :A])
+    @test all(DD[:B] .== D[:B])
+    @test all(DD[:C] .== D[:C])
+
     DD = deepcopy(D)
     mu =  [mean(D[:A]), mean(D[:B])]
     @test all(center!(DD, mu, operate_on=[:A, :B]) .== mu)

@@ -72,8 +72,27 @@ D_NA[1, :A] = NA
     standardize!(XX, mu[flt], sigma[flt], obsdim=2, operate_on=flt)
     @test abs(sum(mean(XX[flt,:], 2))) <= 10e-10
 
+    scaler = StandardScaler(X)
+    XX = transform(X, scaler)
+    @test abs(sum(mean(XX, 2))) <= 10e-10
+    @test std(XX, 2) ≈ ones(size(X, 1)) 
+
     scaler = fit(StandardScaler, X)
     XX = transform(X, scaler)
+    @test abs(sum(mean(XX, 2))) <= 10e-10
+    @test std(XX, 2) ≈ ones(size(X, 1)) 
+
+    Xi = round(Int, X)
+    XX = transform(Xi, scaler)
+    @test abs(sum(mean(XX, 2))) <= 10e-10
+    @test std(XX, 2) ≈ ones(size(X, 1)) 
+
+    XX, scaler = fit_transform(StandardScaler, X)
+    @test abs(sum(mean(XX, 2))) <= 10e-10
+    @test std(XX, 2) ≈ ones(size(X, 1)) 
+
+    XX = deepcopy(X)
+    scaler = fit_transform!(StandardScaler, XX)
     @test abs(sum(mean(XX, 2))) <= 10e-10
     @test std(XX, 2) ≈ ones(size(X, 1)) 
 
@@ -117,6 +136,19 @@ end
     @test abs(sum([mean(DD[colname]) for colname in names(DD)[1:2]])) <= 10e-10
     @test mean([std(DD[colname]) for colname in names(DD)[1:2]]) - 1 <= 10e-10
 
+    DD = deepcopy(D_NA)
+    m, s = standardize!(DD, [:A,:B,:C])
+    @test all(DD[2:end, :A] .== D_NA[2:end, :A])
+    @test all(DD[:C] .== D_NA[:C])
+    @test mean(DD[:B]) ≈ 0.0
+
+    DD = deepcopy(D_NA)
+    m = 0.0
+    s = 1.0
+    m, s = standardize!(DD, m, s, :A)
+    @test all(DD[2:end, :A] .== D_NA[2:end, :A])
+    @test all(DD[:C] .== D_NA[:C])
+
     DD = deepcopy(D)
     mu, sigma = standardize!(DD, mu, sigma, operate_on=[:A,:B])
     @test abs(sum([mean(DD[colname]) for colname in names(DD)[1:2]])) <= 10e-10
@@ -130,8 +162,41 @@ end
     @test abs(mean(DD[:B])) < 10e-10
     @test abs(std(DD[:B])) - 1 < 10e-10
 
+    scaler = StandardScaler(D)
+    DD = transform(D, scaler)
+    @test mean(DD[:A]) <= 10e-10 
+    @test std(DD[:A]) - 1  <= 10e-10 
+    @test mean(DD[:B]) <= 10e-10 
+    @test std(DD[:B]) - 1  <= 10e-10 
+    @test all(DD[:C] .== D[:C])
+
     scaler = fit(StandardScaler, D)
     DD = transform(D, scaler)
+    @test mean(DD[:A]) <= 10e-10 
+    @test std(DD[:A]) - 1  <= 10e-10 
+    @test mean(DD[:B]) <= 10e-10 
+    @test std(DD[:B]) - 1  <= 10e-10 
+    @test all(DD[:C] .== D[:C])
+
+    DD, scaler = fit_transform(StandardScaler, D)
+    @test mean(DD[:A]) <= 10e-10 
+    @test std(DD[:A]) - 1  <= 10e-10 
+    @test mean(DD[:B]) <= 10e-10 
+    @test std(DD[:B]) - 1  <= 10e-10 
+    @test all(DD[:C] .== D[:C])
+
+    DD = deepcopy(D)
+    scaler = fit_transform!(StandardScaler, DD)
+    @test mean(DD[:A]) <= 10e-10 
+    @test std(DD[:A]) - 1  <= 10e-10 
+    @test mean(DD[:B]) <= 10e-10 
+    @test std(DD[:B]) - 1  <= 10e-10 
+    @test all(DD[:C] .== D[:C])
+
+    colnames = [:A, :B]
+    offset = Float64[mean(D[colname]) for colname in colnames]
+    scale = Float64[std(D[colname]) for colname in colnames]
+    scaler = StandardScaler(D, offset, scale)
     @test mean(DD[:A]) <= 10e-10 
     @test std(DD[:A]) - 1  <= 10e-10 
     @test mean(DD[:B]) <= 10e-10 
