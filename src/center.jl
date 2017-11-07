@@ -52,28 +52,28 @@ function center!(X; obsdim=LearnBase.default_obsdim(X), operate_on=default_scale
     center!(X, convert(ObsDimension, obsdim), operate_on)
 end
 
-function center!{T,N,M}(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M}; operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function center!(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M}; operate_on=default_scaleselection(X, convert(ObsDimension, obsdim))) where {T,N,M}
     center!(X, ObsDim.Constant{M}(), operate_on)
 end
 
-function center!{T,N}(X::AbstractArray{T,N}, obsdim::ObsDim.Last; operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function center!(X::AbstractArray{T,N}, obsdim::ObsDim.Last; operate_on=default_scaleselection(X, convert(ObsDimension, obsdim))) where {T,N}
     center!(X, ObsDim.Constant{N}(), operate_on)
 end
 
-function center!{T,N}(X::AbstractArray{T,N}, obsdim::ObsDim.Last, operate_on::AbstractVector)
+function center!(X::AbstractArray{T,N}, obsdim::ObsDim.Last, operate_on::AbstractVector) where {T,N}
     center!(X, ObsDim.Constant{N}(), operate_on)
 end
 
-function center!{T,N,M}(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M}, operate_on::AbstractVector)
+function center!(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M}, operate_on::AbstractVector) where {T,N,M}
     μ = vec(mean(X, M))[operate_on]
     center!(X, μ, obsdim, operate_on)
 end
 
-function center!{T,N,M}(X::AbstractArray{T,N}, μ::AbstractVector, obsdim::ObsDim.Constant{M}; operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function center!(X::AbstractArray{T,N}, μ::AbstractVector, obsdim::ObsDim.Constant{M}; operate_on=default_scaleselection(X, convert(ObsDimension, obsdim))) where {T,N,M}
     center!(X, μ, ObsDim.Constant{M}(), operate_on)
 end
 
-function center!{T,N}(X::AbstractArray{T,N}, μ::AbstractVector, obsdim::ObsDim.Last; operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function center!(X::AbstractArray{T,N}, μ::AbstractVector, obsdim::ObsDim.Last; operate_on=default_scaleselection(X, convert(ObsDimension, obsdim))) where {T,N}
     center!(X, μ, ObsDim.Constant{N}(), operate_on)
 end
 

@@ -50,7 +50,7 @@ function standardize!(X, μ, σ; obsdim=LearnBase.default_obsdim(X), operate_on=
     standardize!(X, μ, σ, convert(ObsDimension, obsdim), operate_on)
 end
 
-function standardize!{T,N}(X::AbstractArray{T,N}, μ, σ, ::ObsDim.Last, operate_on)
+function standardize!(X::AbstractArray{T,N}, μ, σ, ::ObsDim.Last, operate_on) where {T,N}
     standardize!(X, μ, σ, ObsDim.Constant{N}(), operate_on)
 end
 
@@ -58,17 +58,17 @@ function standardize!(X; obsdim=LearnBase.default_obsdim(X), operate_on=default_
     standardize!(X, convert(ObsDimension, obsdim), operate_on)
 end
 
-function standardize!{T,N}(X::AbstractArray{T,N}, ::ObsDim.Last, operate_on)
+function standardize!(X::AbstractArray{T,N}, ::ObsDim.Last, operate_on) where {T,N}
     standardize!(X, ObsDim.Constant{N}(), operate_on)
 end
 
-function standardize!{T,N,M}(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M}, operate_on)
+function standardize!(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M}, operate_on) where {T,N,M}
     μ = vec(mean(X, M))[operate_on]
     σ = vec(std(X, M))[operate_on]
     standardize!(X, μ, σ, obsdim, operate_on)
 end
 
-function standardize!{M}(X::AbstractVector, ::ObsDim.Constant{M}, operate_on)
+function standardize!(X::AbstractVector, ::ObsDim.Constant{M}, operate_on) where {M}
     μ = mean(X)
     σ = std(X)
     for i in operate_on 
@@ -99,14 +99,14 @@ function standardize!(X::AbstractMatrix, μ::AbstractVector, σ::AbstractVector,
     μ, σ
 end
 
-function standardize!{M}(X::AbstractVector, μ::AbstractVector, σ::AbstractVector, ::ObsDim.Constant{M}, operate_on)
+function standardize!(X::AbstractVector, μ::AbstractVector, σ::AbstractVector, ::ObsDim.Constant{M}, operate_on) where {M}
     @inbounds for (i, iVar) in enumerate(operate_on) 
         X[iVar] = (X[iVar] - μ[i]) / σ[i]
     end
     μ, σ
 end
 
-function standardize!{M}(X::AbstractVector, μ::AbstractFloat, σ::AbstractFloat, ::ObsDim.Constant{M}, operate_on)
+function standardize!(X::AbstractVector, μ::AbstractFloat, σ::AbstractFloat, ::ObsDim.Constant{M}, operate_on) where {M}
     @inbounds for i in 1:length(X)
         X[i] = (X[i] - μ) / σ
     end
@@ -229,22 +229,22 @@ as the scaling occurs inplace. (E.g. cannot be of type Matrix{Int64}). This is n
 the case for `transform` however.
 For `DataFrames` `transform!` can be used on columns of type <: Integer.
 """
-immutable StandardScaler{T<:Real,U<:Real,I,M}
+struct StandardScaler{T<:Real,U<:Real,I,M}
     offset::Vector{T}
     scale::Vector{U}
     obsdim::ObsDim.Constant{M}
     operate_on::Vector{I}
 end
 
-function StandardScaler{T<:Real,M}(X::AbstractArray{T,M}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function StandardScaler(X::AbstractArray{T,M}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim))) where {T<:Real,M}
     StandardScaler(X, convert(ObsDimension, obsdim), operate_on)
 end
 
-function StandardScaler{T<:Real,M}(X::AbstractArray{T,M}, ::ObsDim.Last, operate_on)
+function StandardScaler(X::AbstractArray{T,M}, ::ObsDim.Last, operate_on) where {T<:Real,M}
     StandardScaler(X, ObsDim.Constant{M}(), operate_on)
 end
 
-function StandardScaler{T<:Real,N,M}(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M}, operate_on::AbstractVector)
+function StandardScaler(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M}, operate_on::AbstractVector) where {T<:Real,N,M}
     offset = vec(mean(X,M))[operate_on] 
     scale = vec(std(X, M))[operate_on]
     StandardScaler(offset, scale, obsdim, operate_on)
@@ -266,17 +266,17 @@ function StandardScaler(D::AbstractDataFrame, offset, scale; operate_on=default_
     StandardScaler(offset, scale, ObsDim.Constant{1}(), colnames)
 end
 
-function StatsBase.fit{T<:Real}(::Type{StandardScaler}, X::AbstractMatrix{T}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function StatsBase.fit(::Type{StandardScaler}, X::AbstractMatrix{T}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim))) where {T<:Real}
     StandardScaler(X, convert(ObsDimension, obsdim), operate_on)
 end
 
-function fit_transform{T<:Real}(::Type{StandardScaler}, X::AbstractMatrix{T}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function fit_transform(::Type{StandardScaler}, X::AbstractMatrix{T}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim))) where {T<:Real}
     scaler = StandardScaler(X, convert(ObsDimension, obsdim), operate_on)
     Xnew = transform(X, scaler)
     return Xnew, scaler
 end
 
-function fit_transform!{T<:Real}(::Type{StandardScaler}, X::AbstractMatrix{T}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function fit_transform!(::Type{StandardScaler}, X::AbstractMatrix{T}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim))) where {T<:Real}
     scaler = StandardScaler(X, convert(ObsDimension, obsdim), operate_on)
     transform!(X, scaler)
     return scaler
@@ -298,7 +298,7 @@ function fit_transform!(::Type{StandardScaler}, D::AbstractDataFrame; operate_on
     return scaler
 end
 
-function transform!{T<:AbstractFloat,N}(X::AbstractArray{T,N}, cs::StandardScaler)
+function transform!(X::AbstractArray{T,N}, cs::StandardScaler) where {T<:AbstractFloat,N}
     standardize!(X, cs.offset, cs.scale, cs.obsdim, cs.operate_on)
     X
 end
@@ -308,12 +308,12 @@ function transform!(D::AbstractDataFrame, cs::StandardScaler)
     D
 end
 
-function transform{T<:AbstractFloat,N}(X::AbstractArray{T,N}, cs::StandardScaler)
+function transform(X::AbstractArray{T,N}, cs::StandardScaler) where {T<:AbstractFloat,N}
     Xnew = deepcopy(X)
     transform!(Xnew, cs)
 end
 
-function transform{T<:Real,N}(X::AbstractArray{T,N}, cs::StandardScaler)
+function transform(X::AbstractArray{T,N}, cs::StandardScaler) where {T<:Real,N}
     Xnew = convert(AbstractArray{Float64, N}, X)
     transform!(Xnew, cs)
     Xnew

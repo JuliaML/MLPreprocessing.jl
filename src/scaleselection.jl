@@ -18,7 +18,7 @@ function default_scaleselection(x::AbstractVector, ::ObsDim.Last)
     collect(1:length(x))
 end
 
-function default_scaleselection{M}(x::AbstractVector, ::ObsDim.Constant{M})
+function default_scaleselection(x::AbstractVector, ::ObsDim.Constant{M}) where {M}
     collect(1:length(x))
 end
 

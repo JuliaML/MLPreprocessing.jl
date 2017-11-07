@@ -61,11 +61,11 @@ function fixedrange!(X; obsdim=LearnBase.default_obsdim(X), operate_on=default_s
     fixedrange!(X, convert(ObsDimension, obsdim), operate_on)
 end
 
-function fixedrange!{T,N}(X::AbstractArray{T,N}, ::ObsDim.Last, operate_on)
+function fixedrange!(X::AbstractArray{T,N}, ::ObsDim.Last, operate_on) where {T,N}
     fixedrange!(X, ObsDim.Constant{N}(), operate_on)
 end
 
-function fixedrange!{M}(X, obsdim::ObsDim.Constant{M}, operate_on)
+function fixedrange!(X, obsdim::ObsDim.Constant{M}, operate_on) where {M}
     lower = 0
     upper = 1
     xmin = minimum(X, M)[operate_on]
@@ -77,13 +77,13 @@ function fixedrange!(X, lower, upper; obsdim=LearnBase.default_obsdim(X), operat
     fixedrange!(X, lower, upper, convert(ObsDimension, obsdim), operate_on)
 end
 
-function fixedrange!{M}(X, lower, upper, obsdim::ObsDim.Constant{M}, operate_on)
+function fixedrange!(X, lower, upper, obsdim::ObsDim.Constant{M}, operate_on) where {M}
     xmin = minimum(X, M)[operate_on]
     xmax = maximum(X, M)[operate_on]
     fixedrange!(X, lower, upper, xmin, xmax, obsdim, operate_on)
 end
 
-function fixedrange!{T,M}(X::AbstractArray{T,M}, lower, upper, obsdim::ObsDim.Last, operate_on)
+function fixedrange!(X::AbstractArray{T,M}, lower, upper, obsdim::ObsDim.Last, operate_on) where {T,M}
     fixedrange!(X, lower, upper, ObsDim.Constant{M}(), operate_on)
 end
 
@@ -135,7 +135,7 @@ function fixedrange!(x::AbstractVector, lower::Real, upper::Real)
     fixedrange!(x, lower, upper, xmin, xmax)
 end
 
-function fixedrange!{M}(x::AbstractVector, lower::Real, upper::Real, xmin::AbstractVector, xmax::AbstractVector, ::ObsDim.Constant{M}, operate_on::AbstractVector)
+function fixedrange!(x::AbstractVector, lower::Real, upper::Real, xmin::AbstractVector, xmax::AbstractVector, ::ObsDim.Constant{M}, operate_on::AbstractVector) where {M}
     @assert length(xmin) == length(xmax) == length(operate_on)
     xrange = xmax .- xmin
     scale = upper - lower
@@ -277,7 +277,7 @@ as the scaling occurs inplace. (E.g. cannot be of type Matrix{Int64}). This is n
 the case for `transform` however.
 For `DataFrames` `transform!` can be used on columns of type <: Integer.
 """
-immutable FixedRangeScaler{T<:Real,U<:Real,V<:Real,W<:Real,M,I}
+struct FixedRangeScaler{T<:Real,U<:Real,V<:Real,W<:Real,M,I}
     lower::T
     upper::U
     xmin::Vector{V}
@@ -286,31 +286,31 @@ immutable FixedRangeScaler{T<:Real,U<:Real,V<:Real,W<:Real,M,I}
     operate_on::Vector{I}
 end
 
-function FixedRangeScaler{T<:Real,N}(X::AbstractArray{T,N}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function FixedRangeScaler(X::AbstractArray{T,N}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim))) where {T<:Real,N}
     FixedRangeScaler(X, convert(ObsDimension, obsdim), operate_on)
 end
 
-function FixedRangeScaler{T<:Real,N,M}(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M}, operate_on)
+function FixedRangeScaler(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M}, operate_on) where {T<:Real,N,M}
     xmin = vec(minimum(X, M))[operate_on]
     xmax = vec(maximum(X, M))[operate_on]
     FixedRangeScaler(0, 1, xmin, xmax, obsdim, operate_on)
 end
 
-function FixedRangeScaler{T<:Real,N}(X::AbstractArray{T,N}, ::ObsDim.Last, operate_on)
+function FixedRangeScaler(X::AbstractArray{T,N}, ::ObsDim.Last, operate_on) where {T<:Real,N}
     FixedRangeScaler(X, ObsDim.Constant{N}(), operate_on)
 end
 
-function FixedRangeScaler{T<:Real,N}(X::AbstractArray{T,N}, lower, upper; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function FixedRangeScaler(X::AbstractArray{T,N}, lower, upper; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim))) where {T<:Real,N} 
     FixedRangeScaler(X, lower, upper, convert(ObsDimension, obsdim), operate_on)
 end
 
-function FixedRangeScaler{T<:Real,N,M}(X::AbstractArray{T,N}, lower, upper, obsdim::ObsDim.Constant{M}, operate_on)
+function FixedRangeScaler(X::AbstractArray{T,N}, lower, upper, obsdim::ObsDim.Constant{M}, operate_on) where {T<:Real,N,M}
     xmin = vec(minimum(X, M))[operate_on]
     xmax = vec(maximum(X, M))[operate_on]
     FixedRangeScaler(lower, upper, xmin, xmax, obsdim, operate_on)
 end
 
-function FixedRangeScaler{T<:Real,N}(X::AbstractArray{T,N}, lower, upper, ::ObsDim.Last, operate_on)
+function FixedRangeScaler(X::AbstractArray{T,N}, lower, upper, ::ObsDim.Last, operate_on) where {T<:Real,N}
     FixedRangeScaler(X, lower, upper, ObsDim.Constant{N}(), operate_on)
 end
 
@@ -333,33 +333,33 @@ function FixedRangeScaler(D::AbstractDataFrame, lower::Real, upper::Real, operat
     FixedRangeScaler(lower, upper, xmin, xmax, ObsDim.Constant{1}(), colnames)
 end
 
-function StatsBase.fit{T<:Real,N}(::Type{FixedRangeScaler}, X::AbstractArray{T,N}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function StatsBase.fit(::Type{FixedRangeScaler}, X::AbstractArray{T,N}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim))) where {T<:Real,N}
     FixedRangeScaler(X, convert(ObsDimension, obsdim), operate_on)
 end
 
-function fit_transform{T<:Real,N}(::Type{FixedRangeScaler}, X::AbstractArray{T,N}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function fit_transform(::Type{FixedRangeScaler}, X::AbstractArray{T,N}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim))) where {T<:Real,N}
     scaler = FixedRangeScaler(X, convert(ObsDimension, obsdim), operate_on)
     Xnew = transform(X, scaler)
     return Xnew, scaler
 end
 
-function fit_transform!{T<:Real,N}(::Type{FixedRangeScaler}, X::AbstractArray{T,N}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function fit_transform!(::Type{FixedRangeScaler}, X::AbstractArray{T,N}; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim))) where {T<:Real,N}
     scaler = FixedRangeScaler(X, convert(ObsDimension, obsdim), operate_on)
     transform!(X, scaler)
     return scaler
 end
 
-function StatsBase.fit{T<:Real,N}(::Type{FixedRangeScaler}, X::AbstractArray{T,N}, lower, upper; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function StatsBase.fit(::Type{FixedRangeScaler}, X::AbstractArray{T,N}, lower, upper; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim))) where {T<:Real,N}
     FixedRangeScaler(X, lower, upper, convert(ObsDimension, obsdim), operate_on)
 end
 
-function fit_transform{T<:Real,N}(::Type{FixedRangeScaler}, X::AbstractArray{T,N}, lower, upper; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function fit_transform(::Type{FixedRangeScaler}, X::AbstractArray{T,N}, lower, upper; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim))) where {T<:Real,N}
     scaler = FixedRangeScaler(X, lower, upper, convert(ObsDimension, obsdim), operate_on)
     Xnew = transform(X, scaler)
     return Xnew, scaler
 end
 
-function fit_transform!{T<:Real,N}(::Type{FixedRangeScaler}, X::AbstractArray{T,N}, lower, upper; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim)))
+function fit_transform!(::Type{FixedRangeScaler}, X::AbstractArray{T,N}, lower, upper; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim))) where {T<:Real,N}
     scaler = FixedRangeScaler(X, lower, upper, convert(ObsDimension, obsdim), operate_on)
     transform!(X, scaler)
     return scaler
@@ -397,11 +397,11 @@ function fit_transform!(::Type{FixedRangeScaler}, D::AbstractDataFrame, lower, u
     return scaler
 end
 
-function transform!{T<:AbstractFloat,N}(X::AbstractArray{T,N}, cs::FixedRangeScaler)
+function transform!(X::AbstractArray{T,N}, cs::FixedRangeScaler) where {T<:AbstractFloat,N}
     fixedrange!(X, cs.lower, cs.upper, cs.xmin, cs.xmax, cs.obsdim, cs.operate_on)
 end
 
-function transform!{T<:AbstractFloat}(x::AbstractVector{T}, cs::FixedRangeScaler)
+function transform!(x::AbstractVector{T}, cs::FixedRangeScaler) where {T<:AbstractFloat} 
     fixedrange!(x, cs.lower, cs.upper, cs.xmin, cs.xmax, cs.obsdim, cs.operate_on)
 end
 
@@ -409,13 +409,13 @@ function transform!(D::AbstractDataFrame, cs::FixedRangeScaler)
     fixedrange!(D, cs.lower, cs.upper, cs.xmin, cs.xmax, cs.operate_on)
 end
 
-function transform{T<:AbstractFloat,N}(X::AbstractArray{T,N}, cs::FixedRangeScaler)
+function transform(X::AbstractArray{T,N}, cs::FixedRangeScaler) where {T<:AbstractFloat,N}
     Xnew = copy(X)
     fixedrange!(Xnew, cs.lower, cs.upper, cs.xmin, cs.xmax, cs.obsdim, cs.operate_on)
     Xnew
 end
 
-function transform{T<:Real,N}(X::AbstractArray{T,N}, cs::FixedRangeScaler)
+function transform(X::AbstractArray{T,N}, cs::FixedRangeScaler) where {T<:Real,N}
     Xnew = convert(AbstractArray{Float64, N}, X)
     fixedrange!(Xnew, cs.lower, cs.upper, cs.xmin, cs.xmax, cs.obsdim, cs.operate_on)
     Xnew
