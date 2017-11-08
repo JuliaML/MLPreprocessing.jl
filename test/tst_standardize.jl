@@ -82,7 +82,7 @@ D_NA[1, :A] = NA
     @test abs(sum(mean(XX, 2))) <= 10e-10
     @test std(XX, 2) ≈ ones(size(X, 1)) 
 
-    Xi = round(Int, X)
+    Xi = round.(Int, X)
     XX = transform(Xi, scaler)
     @test abs(sum(mean(XX, 2))) <= 10e-10
     @test std(XX, 2) ≈ ones(size(X, 1)) 
