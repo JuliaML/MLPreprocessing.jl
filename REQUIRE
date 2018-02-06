@@ -1,4 +1,4 @@
 julia 0.6
 StatsBase 0.13
 LearnBase 0.1.5 0.2.0
-DataFrames 0.9
+DataFrames 0.11
