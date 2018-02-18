@@ -71,7 +71,7 @@ end
 function standardize!(X::AbstractVector, ::ObsDim.Constant{M}, operate_on) where {M}
     μ = mean(X)
     σ = std(X)
-    for i in operate_on 
+    for i in operate_on
         X[i] = (X[i] - μ) / σ
     end
     μ, σ
@@ -100,7 +100,7 @@ function standardize!(X::AbstractMatrix, μ::AbstractVector, σ::AbstractVector,
 end
 
 function standardize!(X::AbstractVector, μ::AbstractVector, σ::AbstractVector, ::ObsDim.Constant{M}, operate_on) where {M}
-    @inbounds for (i, iVar) in enumerate(operate_on) 
+    @inbounds for (i, iVar) in enumerate(operate_on)
         X[iVar] = (X[iVar] - μ[i]) / σ[i]
     end
     μ, σ
@@ -126,8 +126,8 @@ function standardize!(D::AbstractDataFrame, colnames::AbstractVector{Symbol})
         if eltype(D[colname]) <: Real
             μ = mean(D[colname])
             σ = std(D[colname])
-            if isna(μ)
-                warn("Skipping \"$colname\" because it contains NA values")
+            if ismissing(μ)
+                warn("Skipping \"$colname\" because it contains missing values")
                 continue
             end
             standardize!(D, μ, σ, colname)
@@ -152,8 +152,8 @@ function standardize!(D::AbstractDataFrame, μ::AbstractVector, σ::AbstractVect
 end
 
 function standardize!(D::AbstractDataFrame, μ::Real, σ::Real, colname::Symbol)
-    if any(isna, D[colname]) | !(eltype(D[colname]) <: Real)
-        warn("Skipping \"$colname\" because it contains NA values or is not of type <: Real")
+    if any(ismissing, D[colname]) | !(eltype(D[colname]) <: Real)
+        warn("Skipping \"$colname\" because it contains missing values or is not of type <: Real")
     else
         newcol::Vector{Float64} = convert(Vector{Float64}, D[colname])
         nobs = length(newcol)
@@ -245,7 +245,7 @@ function StandardScaler(X::AbstractArray{T,M}, ::ObsDim.Last, operate_on) where 
 end
 
 function StandardScaler(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M}, operate_on::AbstractVector) where {T<:Real,N,M}
-    offset = vec(mean(X,M))[operate_on] 
+    offset = vec(mean(X,M))[operate_on]
     scale = vec(std(X, M))[operate_on]
     StandardScaler(offset, scale, obsdim, operate_on)
 end

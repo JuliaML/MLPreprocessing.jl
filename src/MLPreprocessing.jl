@@ -5,7 +5,7 @@ using StatsBase
 using LearnBase
 using DataFrames
 
-using LearnBase: ObsDimension, obs_dim, default_obsdim
+using LearnBase: ObsDimension, default_obsdim
 
 export
 
@@ -24,7 +24,6 @@ export
     transform,
     transform!
 
- 
 include("scaleselection.jl")
 include("basis_expansion.jl")
 include("center.jl")
