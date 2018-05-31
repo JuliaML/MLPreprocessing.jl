@@ -43,7 +43,7 @@ function expand_poly(x::AbstractVector, degree::Integer, ::ObsDim.Last)
     expand_poly(x, degree, ObsDim.Constant{2}())
 end
 
-function expand_poly{T<:Number}(x::AbstractVector{T}, degree::Integer, ::ObsDim.Constant{2} = ObsDim.Constant{2}())
+function expand_poly(x::AbstractVector{T}, degree::Integer, ::ObsDim.Constant{2} = ObsDim.Constant{2}()) where T<:Number
     n = length(x)
     # FIXME: consider support for colorants (i.e. don't hardcode Float64)
     x_vec = convert(Vector{Float64}, x)
@@ -56,7 +56,7 @@ function expand_poly{T<:Number}(x::AbstractVector{T}, degree::Integer, ::ObsDim.
     X
 end
 
-function expand_poly{T<:Number}(x::AbstractVector{T}, degree::Integer, ::ObsDim.Constant{1})
+function expand_poly(x::AbstractVector{T}, degree::Integer, ::ObsDim.Constant{1}) where T<:Number
     n = length(x)
     # FIXME: consider support for colorants (i.e. don't hardcode Float64)
     x_vec = convert(Vector{Float64}, x)
