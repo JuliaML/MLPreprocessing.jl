@@ -54,7 +54,7 @@ function expand_poly(
 ) where T
 
     n = length(x)
-    X = zeros(float(T), (degree, n))
+    X = zeros(floattype(T), (degree, n))
     for i in 1:n
         for d in 1:degree
             @inbounds X[d, i] += float(x[i])^d
@@ -70,7 +70,7 @@ function expand_poly(
 ) where T
 
     n = length(x)
-    X = zeros(float(T), (n, degree))
+    X = zeros(floattype(T), (n, degree))
     for d in 1:degree
         for i in 1:n
             @inbounds X[i, d] += float(x[i])^d
@@ -78,3 +78,8 @@ function expand_poly(
     end
     return X
 end
+
+
+floattype(::Type{T}) where T = float(T)
+floattype(::Type{Missing}) = Missing
+floattype(U::Union) = Union{floattype(U.a), floattype(U.b)}
