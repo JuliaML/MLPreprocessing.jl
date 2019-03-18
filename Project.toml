@@ -1,0 +1,17 @@
+name = "MLPreprocessing"
+uuid = "270893ea-b48f-5b4f-bac8-adb34c91318c"
+
+[deps]
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+LearnBase = "7f8f8fb0-2700-5f03-b4bd-41f8cfc144b6"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+
+[compat]
+julia = "0.7, 1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
