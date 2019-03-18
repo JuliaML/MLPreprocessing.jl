@@ -48,13 +48,13 @@ function expand_poly(x::AbstractVector, degree::Integer, ::ObsDim.Last)
 end
 
 function expand_poly(
-    x::AbstractVector,
+    x::AbstractVector{T},
     degree::Integer,
     ::ObsDim.Constant{2} = ObsDim.Constant{2}()
-)
+) where T
 
     n = length(x)
-    X = float.(zeros(T, (degree, n)))
+    X = zeros(float(T), (degree, n))
     for i in 1:n
         for d in 1:degree
             @inbounds X[d, i] += float(x[i])^d
@@ -64,13 +64,13 @@ function expand_poly(
 end
 
 function expand_poly(
-    x::AbstractVector,
+    x::AbstractVector{T},
     degree::Integer,
     ::ObsDim.Constant{1}
-)
+) where T
 
     n = length(x)
-    X = float.(zeros(T, (degree, n)))
+    X = zeros(float(T), (n, degree))
     for d in 1:degree
         for i in 1:n
             @inbounds X[i, d] += float(x[i])^d

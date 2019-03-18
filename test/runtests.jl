@@ -1,6 +1,6 @@
 using MLPreprocessing
 using DataFrames
-using Base.Test
+using Test
 
 tests = [
     "tst_expand.jl"
