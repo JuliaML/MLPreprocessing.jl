@@ -29,10 +29,10 @@ functions `fit()`, `transform()` and `fit_transform()` as shown below.
 `X`         :  Data of type Matrix or `DataFrame`.
 
 `μ`         :  Vector or scalar describing the translation.
-               Defaults to mean(X, obsdim)
+               Defaults to mean(X; dims=obsdim)
 
 `σ`         :  Vector or scalar describing the scale.
-               Defaults to std(X, obsdim)
+               Defaults to std(X; dims=obsdim)
 
 `obsdim`    :  Specify which axis corresponds to observations.
                Defaults to obsdim=2 (observations are columns of matrix)
@@ -46,7 +46,7 @@ functions `fit()`, `transform()` and `fit_transform()` as shown below.
                with index 1 and 3 only (if obsdim=1, else rows 1 and 3)
 
 Note on DataFrames:
-Columns containing `NA` values are skipped.
+Columns containing `missing` values are skipped.
 Columns containing non numeric elements are skipped.
 
 Examples:

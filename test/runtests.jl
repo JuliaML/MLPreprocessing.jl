@@ -1,6 +1,7 @@
 using MLPreprocessing
 using DataFrames
 using Test
+using Statistics
 
 tests = [
     "tst_expand.jl"

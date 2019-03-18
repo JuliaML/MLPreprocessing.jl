@@ -1,6 +1,7 @@
 __precompile__()
 module MLPreprocessing
 
+using Statistics
 using StatsBase
 using LearnBase
 using DataFrames

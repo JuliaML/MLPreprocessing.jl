@@ -38,7 +38,7 @@ If `lower` and `upper`  are omitted the default range is [0:1].
 
 
 Note on DataFrames:
-Columns containing `NA` values are skipped.
+Columns containing `missing` values are skipped.
 Columns containing non numeric elements are skipped.
 
 Examples:
@@ -68,8 +68,8 @@ end
 function fixedrange!(X, obsdim::ObsDim.Constant{M}, operate_on) where {M}
     lower = 0
     upper = 1
-    xmin = minimum(X, M)[operate_on]
-    xmax = maximum(X, M)[operate_on]
+    xmin = minimum(X; dims=M)[operate_on]
+    xmax = maximum(X; dims=M)[operate_on]
     fixedrange!(X, lower, upper, xmin, xmax, obsdim, operate_on)
 end
 
@@ -78,8 +78,8 @@ function fixedrange!(X, lower, upper; obsdim=LearnBase.default_obsdim(X), operat
 end
 
 function fixedrange!(X, lower, upper, obsdim::ObsDim.Constant{M}, operate_on) where {M}
-    xmin = minimum(X, M)[operate_on]
-    xmax = maximum(X, M)[operate_on]
+    xmin = minimum(X; dims=M)[operate_on]
+    xmax = maximum(X; dims=M)[operate_on]
     fixedrange!(X, lower, upper, xmin, xmax, obsdim, operate_on)
 end
 
@@ -174,22 +174,22 @@ function fixedrange!(D::AbstractDataFrame, lower::Real, upper::Real, operate_on:
     xmin = Float64[]
     xmax = Float64[]
 
-    for colname in operate_on 
-        if eltype(D[colname]) <: Real
+    for colname in operate_on
+        if eltype(D[colname]) <: Union{Real,Missing}
             minval = minimum(D[colname])
             maxval = maximum(D[colname])
-            if isna(minval)
-                warn("Skipping \"$colname\" because it contains NA values")
+            if ismissing(minval)
+                @warn("Skipping \"$colname\" because it contains missing values")
                 continue
             end
             fixedrange!(D, lower, upper, minval, maxval, colname)
             push!(xmin, minval)
             push!(xmax, maxval)
         else
-            warn("Skipping \"$colname\" because data is not of type T <: Real.")
+            @warn("Skipping \"$colname\" because data is not of type T <: Real.")
         end
     end
-    lower, upper, xmin, xmax 
+    lower, upper, xmin, xmax
 end
 
 function fixedrange!(D::AbstractDataFrame, lower, upper, xmin, xmax; operate_on=default_scaleselection(D))
@@ -201,12 +201,12 @@ function fixedrange!(D::AbstractDataFrame, lower::Real, upper::Real, xmin::Abstr
     for (iVar, colname) in enumerate(operate_on)
         fixedrange!(D, lower, upper, xmin[iVar], xmax[iVar], colname)
     end
-    lower, upper, xmin, xmax, operate_on 
+    lower, upper, xmin, xmax, operate_on
 end
 
 function fixedrange!(D::AbstractDataFrame, lower::Real, upper::Real, xmin::Real, xmax::Real, colname::Symbol)
-    if any(isna, D[colname]) | !(eltype(D[colname]) <: Real)
-        warn("Skipping \"$colname\" because it contains NA values or is not of type <: Real")
+    if any(ismissing, D[colname]) | !(eltype(D[colname]) <: Union{Real,Missing})
+        @warn("Skipping \"$colname\" because it contains missing values or is not of type <: Real")
     else
         newcol::Vector{Float64} = convert(Vector{Float64}, D[colname])
         fixedrange!(newcol, lower, upper, xmin, xmax)
@@ -247,7 +247,7 @@ data and then apply the scaling to the test data at a later stage. (See examples
                with index 1 and 3 only (if obsdim=1, else rows 1 and 3)
 
 Note on DataFrames:
-Columns containing `NA` values are skipped.
+Columns containing `missing` values are skipped.
 Columns containing non numeric elements are skipped.
 
 Examples:
@@ -291,8 +291,8 @@ function FixedRangeScaler(X::AbstractArray{T,N}; obsdim=LearnBase.default_obsdim
 end
 
 function FixedRangeScaler(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M}, operate_on) where {T<:Real,N,M}
-    xmin = vec(minimum(X, M))[operate_on]
-    xmax = vec(maximum(X, M))[operate_on]
+    xmin = vec(minimum(X; dims=M))[operate_on]
+    xmax = vec(maximum(X; dims=M))[operate_on]
     FixedRangeScaler(0, 1, xmin, xmax, obsdim, operate_on)
 end
 
@@ -300,13 +300,13 @@ function FixedRangeScaler(X::AbstractArray{T,N}, ::ObsDim.Last, operate_on) wher
     FixedRangeScaler(X, ObsDim.Constant{N}(), operate_on)
 end
 
-function FixedRangeScaler(X::AbstractArray{T,N}, lower, upper; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim))) where {T<:Real,N} 
+function FixedRangeScaler(X::AbstractArray{T,N}, lower, upper; obsdim=LearnBase.default_obsdim(X), operate_on=default_scaleselection(X, convert(ObsDimension, obsdim))) where {T<:Real,N}
     FixedRangeScaler(X, lower, upper, convert(ObsDimension, obsdim), operate_on)
 end
 
 function FixedRangeScaler(X::AbstractArray{T,N}, lower, upper, obsdim::ObsDim.Constant{M}, operate_on) where {T<:Real,N,M}
-    xmin = vec(minimum(X, M))[operate_on]
-    xmax = vec(maximum(X, M))[operate_on]
+    xmin = vec(minimum(X; dims=M))[operate_on]
+    xmax = vec(maximum(X; dims=M))[operate_on]
     FixedRangeScaler(lower, upper, xmin, xmax, obsdim, operate_on)
 end
 
@@ -326,7 +326,7 @@ function FixedRangeScaler(D::AbstractDataFrame, lower::Real, upper::Real, operat
     xmin = Float64[]
     xmax = Float64[]
     colnames = valid_columns(D, operate_on)
-    for colname in colnames 
+    for colname in colnames
         push!(xmin, minimum(D[colname]))
         push!(xmax, maximum(D[colname]))
     end
@@ -401,7 +401,7 @@ function transform!(X::AbstractArray{T,N}, cs::FixedRangeScaler) where {T<:Abstr
     fixedrange!(X, cs.lower, cs.upper, cs.xmin, cs.xmax, cs.obsdim, cs.operate_on)
 end
 
-function transform!(x::AbstractVector{T}, cs::FixedRangeScaler) where {T<:AbstractFloat} 
+function transform!(x::AbstractVector{T}, cs::FixedRangeScaler) where {T<:AbstractFloat}
     fixedrange!(x, cs.lower, cs.upper, cs.xmin, cs.xmax, cs.obsdim, cs.operate_on)
 end
 

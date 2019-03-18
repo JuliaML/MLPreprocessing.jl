@@ -85,11 +85,10 @@ function center!(X::AbstractMatrix,
     center!(X, ObsDim.Constant{2}(), operate_on)
 end
 
-function center!(X::AbstractMatrix,
+function center!(X::AbstractArray,
                  obsdim::ObsDim.Constant{M},
-                 operate_on::AbstractVector
-                ) where {M}
-    μ = vec(mean(X, M))[operate_on]
+                 operate_on::AbstractVector) where {M}
+    μ = vec(mean(X; dims=M))[operate_on]
     center!(X, μ, obsdim, operate_on)
 end
 
@@ -226,16 +225,16 @@ end
 function center!(D::AbstractDataFrame, operate_on::AbstractVector{Symbol})
     μ_vec = Float64[]
     for colname in operate_on
-        if eltype(D[colname]) <: Real
-            μ = mean(D[colname])
+        if eltype(@view D[colname]) <: Union{Real, Missing}
+            μ = mean(@view D[colname])
             if ismissing(μ)
-                warn("Skipping \"$colname\" because it contains missing values")
+                @warn("Skipping \"$colname\" because it contains missing values")
                 continue
             end
             center!(D, μ, colname)
             push!(μ_vec, μ)
         else
-            warn("Skipping \"$colname\" because data is not of type T <: Real.")
+            @warn("Skipping \"$colname\" because data is not of type T <: Real.")
         end
     end
     μ_vec
@@ -247,18 +246,18 @@ end
 
 function center!(D::AbstractDataFrame, μ::AbstractVector, operate_on::AbstractVector{Symbol})
     for (icol, colname) in enumerate(operate_on)
-        if eltype(D[colname]) <: Real
+        if eltype(@view D[colname]) <: Union{Real, Missing}
             center!(D, μ[icol], colname)
         else
-            warn("Skipping \"$colname\" because data is not of type T <: Real.")
+            @warn("Skipping \"$colname\" because data is not of type T <: Real.")
         end
     end
     μ
 end
 
 function center!(D::AbstractDataFrame, μ::Real, colname::Symbol)
-    if sum([ismissing(value) for value in D[colname]]) > 0
-        warn("Skipping \"$colname\" because it contains missing values")
+    if any(ismissing, @view D[colname])
+        @warn("Skipping \"$colname\" because it contains missing values")
     else
         newcol::Vector{Float64} = convert(Vector{Float64}, D[colname])
         center!(newcol, μ)
