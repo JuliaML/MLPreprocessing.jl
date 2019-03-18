@@ -3,55 +3,56 @@ x = rand(10) * 10
 
 D = DataFrame(A=rand(10), B=collect(1:10), C=[hex(x) for x in 11:20])
 D_NA = deepcopy(D)
-D_NA[1, :A] = NA
+allowmissing!(D_NA, :A)
+D_NA[1, :A] = missing
 
 @testset "Array" begin
     XX = deepcopy(X)
     mu = center!(XX, obsdim=1)
-    @test sum(abs.(mean(XX, 1))) == 0 
+    @test sum(abs.(mean(XX, 1))) == 0
     @test all(std(XX, 1) .== std(X, 1))
     @test all(mu .== vec(mean(X, 1)))
 
     XX = deepcopy(X)
     mu = center!(XX, ObsDim.First())
-    @test sum(abs.(mean(XX, 1))) == 0 
+    @test sum(abs.(mean(XX, 1))) == 0
     @test all(std(XX, 1) .== std(X, 1))
     @test all(mu .== vec(mean(X, 1)))
 
     XX = deepcopy(X)
     mu = center!(XX, ObsDim.Last())
-    @test sum(abs.(mean(XX, 2))) == 0 
+    @test sum(abs.(mean(XX, 2))) == 0
     @test all(std(XX, 2) .== std(X, 2))
     @test all(mu .== vec(mean(X, 2)))
 
     XX = deepcopy(X)
     mu = center!(XX)
-    @test sum(abs.(mean(XX, 2))) == 0 
+    @test sum(abs.(mean(XX, 2))) == 0
     @test all(std(XX, 2) .== std(X, 2))
     @test all(mu .== vec(mean(X, 2)))
 
     XX = deepcopy(X)
     mu = vec(mean(X, 1))
     center!(XX, mu, obsdim=1)
-    @test sum(abs.(mean(XX, 1))) == 0 
+    @test sum(abs.(mean(XX, 1))) == 0
     @test all(std(XX, 1) .== std(X, 1))
 
     XX = deepcopy(X)
     mu = vec(mean(X, 1))
     center!(XX, mu, ObsDim.First())
-    @test sum(abs.(mean(XX, 1))) == 0 
+    @test sum(abs.(mean(XX, 1))) == 0
     @test all(std(XX, 1) .== std(X, 1))
 
     XX = deepcopy(X)
     mu = vec(mean(XX, 2))
     center!(XX, mu, obsdim=2)
-    @test sum(abs.(mean(XX, 2))) == 0 
+    @test sum(abs.(mean(XX, 2))) == 0
     @test all(std(XX, 2) .== std(X, 2))
 
     XX = deepcopy(X)
     mu = vec(mean(XX, 2))
     center!(XX, mu, ObsDim.Last())
-    @test sum(abs.(mean(XX, 2))) == 0 
+    @test sum(abs.(mean(XX, 2))) == 0
     @test all(std(XX, 2) .== std(X, 2))
 
     XX = deepcopy(X)
@@ -124,7 +125,7 @@ end
     @test all(DD[:C] .== D[:C])
 
     DD = deepcopy(D_NA)
-    mu = 0.0 
+    mu = 0.0
     mu = center!(DD, mu, :A)
     @test all(DD[2:end, :A] .== D[2:end, :A])
     @test all(DD[:B] .== D[:B])
@@ -136,11 +137,11 @@ end
     @test abs.(mean(DD[:A])) <= 10e-10
     @test abs.(mean(DD[:B])) <= 10e-10
     @test all(DD[:C] .== D[:C])
-    
+
     DD = deepcopy(D_NA)
     center!(DD)
     @test all(DD[2:end, :A] .== D[2:end, :A])
     @test abs.(mean(DD[:B])) <= 10e-10
     @test all(DD[:C] .== D[:C])
-    @test isna(DD[1, :A])
+    @test ismissing(DD[1, :A])
 end
