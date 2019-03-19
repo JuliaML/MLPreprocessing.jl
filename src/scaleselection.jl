@@ -25,10 +25,10 @@ end
 function valid_columns(D::AbstractDataFrame)
     valid_colnames = Symbol[]
     for colname in names(D)
-        if (eltype(D[colname]) <: Real) & !any(ismissing, D[colname])
+        if (eltype(D[colname]) <: Union{Real,Missing}) & !any(ismissing, D[colname])
             push!(valid_colnames, colname)
         else
-            warn("Skipping \"$colname\" because it either contains missing values or is not of type <: Real")
+            @warn("Skipping \"$colname\" because it either contains missing or is not of type <: Real")
         end
     end
     valid_colnames
@@ -37,12 +37,11 @@ end
 function valid_columns(D::AbstractDataFrame, colnames)
     valid_colnames = Symbol[]
     for colname in colnames
-        if (eltype(D[colname]) <: Real) & !(any(ismissing, D[colname]))
+        if (eltype(D[colname]) <: Union{Real,Missing}) & !(any(ismissing, D[colname]))
             push!(valid_colnames, colname)
         else
-            warn("Skipping \"$colname\" because it either contains missing values or is not of type <: Real")
+            @warn("Skipping \"$colname\" because it either contains missing or is not of type <: Real")
         end
     end
     valid_colnames
 end
-

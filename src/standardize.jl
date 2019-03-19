@@ -11,10 +11,10 @@ If μ and σ are omitted they are computed such that variables have a mean of ze
 
 
 `μ`         :  Vector or value describing the translation.
-               Defaults to mean(X, 2)
+               Defaults to mean(X; dims=2)
 
 `σ`         :  Vector or value describing the scale.
-               Defaults to std(X, 2)
+               Defaults to std(X; dims=2)
 
 `obsdim`    :  Specify which axis corresponds to observations.
                Defaults to obsdim=2 (observations are columns of matrix)
@@ -63,8 +63,8 @@ function standardize!(X::AbstractArray{T,N}, ::ObsDim.Last, operate_on) where {T
 end
 
 function standardize!(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M}, operate_on) where {T,N,M}
-    μ = vec(mean(X, M))[operate_on]
-    σ = vec(std(X, M))[operate_on]
+    μ = vec(mean(X; dims=M))[operate_on]
+    σ = vec(std(X; dims=M))[operate_on]
     standardize!(X, μ, σ, obsdim, operate_on)
 end
 
@@ -78,37 +78,38 @@ function standardize!(X::AbstractVector, ::ObsDim.Constant{M}, operate_on) where
 end
 
 function standardize!(X::AbstractMatrix, μ::AbstractVector, σ::AbstractVector, ::ObsDim.Constant{2}, operate_on)
-    σ[σ .== 0] = 1
+    @inbounds σ[iszero.(σ)] .= 1
     nVars, nObs = size(X)
     for iObs in 1:nObs
         @inbounds for (i, iVar) in enumerate(operate_on)
-            X[iVar, iObs] = (X[iVar, iObs] - μ[i]) / σ[i]
+            X[iVar, iObs] -= μ[i]
+            X[iVar, iObs] /= σ[i]
         end
     end
     μ, σ
 end
 
 function standardize!(X::AbstractMatrix, μ::AbstractVector, σ::AbstractVector, ::ObsDim.Constant{1}, operate_on)
-    σ[σ .== 0] = 1
+    @inbounds σ[iszero.(σ)] .= 1
     nObs, nVars = size(X)
     for (i, iVar) in enumerate(operate_on)
-        @inbounds for iObs in 1:nObs
-            X[iObs, iVar] = (X[iObs, iVar] - μ[i]) / σ[i]
+        for iObs in 1:nObs
+            @inbounds(X[iObs, iVar] = (X[iObs, iVar] - μ[i]) / σ[i])
         end
     end
     μ, σ
 end
 
 function standardize!(X::AbstractVector, μ::AbstractVector, σ::AbstractVector, ::ObsDim.Constant{M}, operate_on) where {M}
-    @inbounds for (i, iVar) in enumerate(operate_on)
-        X[iVar] = (X[iVar] - μ[i]) / σ[i]
+    for (i, iVar) in enumerate(operate_on)
+        @inbounds(X[iVar] = (X[iVar] - μ[i]) / σ[i])
     end
     μ, σ
 end
 
 function standardize!(X::AbstractVector, μ::AbstractFloat, σ::AbstractFloat, ::ObsDim.Constant{M}, operate_on) where {M}
-    @inbounds for i in 1:length(X)
-        X[i] = (X[i] - μ) / σ
+    for i in eachindex(X)
+        @inbounds(X[i] = (X[i] - μ) / σ)
     end
     μ, σ
 end
@@ -123,18 +124,18 @@ function standardize!(D::AbstractDataFrame, colnames::AbstractVector{Symbol})
     σ_vec = Float64[]
 
     for colname in colnames
-        if eltype(D[colname]) <: Real
+        if eltype(D[colname]) <: Union{Real, Missing}
             μ = mean(D[colname])
             σ = std(D[colname])
             if ismissing(μ)
-                warn("Skipping \"$colname\" because it contains missing values")
+                @warn("Skipping \"$colname\" because it contains missing values")
                 continue
             end
             standardize!(D, μ, σ, colname)
             push!(μ_vec, μ)
             push!(σ_vec, σ)
         else
-            warn("Skipping \"$colname\" because data is not of type T <: Real.")
+            @warn("Skipping \"$colname\" because data is not of type T <: Real.")
         end
     end
     μ_vec, σ_vec
@@ -152,13 +153,13 @@ function standardize!(D::AbstractDataFrame, μ::AbstractVector, σ::AbstractVect
 end
 
 function standardize!(D::AbstractDataFrame, μ::Real, σ::Real, colname::Symbol)
-    if any(ismissing, D[colname]) | !(eltype(D[colname]) <: Real)
-        warn("Skipping \"$colname\" because it contains missing values or is not of type <: Real")
+    if any(ismissing, D[colname]) | !(eltype(D[colname]) <: Union{Real,Missing})
+        @warn("Skipping \"$colname\" because it contains missing values or is not of type <: Real")
     else
         newcol::Vector{Float64} = convert(Vector{Float64}, D[colname])
         nobs = length(newcol)
-        @inbounds for i in eachindex(newcol)
-            newcol[i] = (newcol[i] - μ) / σ
+        for i in eachindex(newcol)
+            @inbounds(newcol[i] = (newcol[i] - μ) / σ)
        end
         D[colname] = newcol
     end
@@ -179,10 +180,10 @@ data and then apply the scaling to the test data at a later stage. (See examples
 `X`         :  Data of type Matrix or `DataFrame`.
 
 `μ`         :  Vector or scalar describing the translation.
-               Defaults to mean(X, obsdim)
+               Defaults to mean(X; dims=obsdim)
 
 `σ`         :  Vector or scalar describing the scale.
-               Defaults to std(X, obsdim)
+               Defaults to std(X; dims=obsdim)
 
 `obsdim`    :  Specify which axis corresponds to observations.
                Defaults to obsdim=2 (observations are columns of matrix)
@@ -196,7 +197,7 @@ data and then apply the scaling to the test data at a later stage. (See examples
                with index 1 and 3 only (if obsdim=1, else rows 1 and 3)
 
 Note on DataFrames:
-Columns containing `NA` values are skipped.
+Columns containing `missing` values are skipped.
 Columns containing non numeric elements are skipped.
 
 Examples:
@@ -245,8 +246,8 @@ function StandardScaler(X::AbstractArray{T,M}, ::ObsDim.Last, operate_on) where 
 end
 
 function StandardScaler(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M}, operate_on::AbstractVector) where {T<:Real,N,M}
-    offset = vec(mean(X,M))[operate_on]
-    scale = vec(std(X, M))[operate_on]
+    offset = vec(mean(X; dims=M))[operate_on]
+    scale = vec(std(X; dims=M))[operate_on]
     StandardScaler(offset, scale, obsdim, operate_on)
 end
 

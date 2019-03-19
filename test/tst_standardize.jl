@@ -1,9 +1,8 @@
 X = collect(Float64, reshape(1:40, 10, 4))
 x = rand(10) * 10
 
-D = DataFrame(A=rand(10), B=collect(1:10), C=[hex(x) for x in 11:20])
-D_NA = deepcopy(D)
-allowmissing!(D_NA, :A)
+D = DataFrame(A=rand(10), B=1:10, C=string.(11:20; base=16))
+D_NA = allowmissing!(copy(D))
 D_NA[1, :A] = missing
 
 @testset "Array" begin
@@ -27,92 +26,92 @@ D_NA[1, :A] = missing
 
     xx = deepcopy(x)
     mu = deepcopy(x) .- 1
-    sigma = ones(x)
+    sigma = ones(size(x))
     mu, sigma = standardize!(xx, mu, sigma, obsdim=1)
     @test mean(xx) ≈ 1
 
     # Rescale Matrix
     XX = deepcopy(X)
     standardize!(XX)
-    @test abs(sum(mean(XX, 2))) <= 10e-10
-    @test std(XX, 2) ≈ ones(size(X, 1))
+    @test abs(sum(mean(XX; dims=2))) <= 10e-10
+    @test std(XX; dims=2) ≈ ones(size(X, 1))
 
     XX = deepcopy(X)
     standardize!(XX, obsdim=2)
-    @test abs(sum(mean(XX, 2))) <= 10e-10
-    @test std(XX, 2) ≈ ones(size(X, 1))
+    @test abs(sum(mean(XX; dims=2))) <= 10e-10
+    @test std(XX; dims=2) ≈ ones(size(X, 1))
 
     XX = deepcopy(X)
     standardize!(XX, obsdim=1)
-    @test abs(sum(mean(XX, 1))) <= 10e-10
-    @test vec(std(XX, 1)) ≈ ones(size(X, 2))
+    @test abs(sum(mean(XX; dims=1))) <= 10e-10
+    @test vec(std(XX; dims=1)) ≈ ones(size(X, 2))
 
     XX = deepcopy(X)
-    mu = vec(mean(XX, 1))
-    sigma = vec(std(XX, 1))
+    mu = vec(mean(XX; dims=1))
+    sigma = vec(std(XX; dims=1))
     standardize!(XX, mu, sigma, obsdim=1)
-    @test abs(sum(mean(XX, 1))) <= 10e-10
+    @test abs(sum(mean(XX; dims=1))) <= 10e-10
 
     XX = deepcopy(X)
-    mu = vec(mean(XX, 2))
-    sigma = vec(std(XX, 2))
+    mu = vec(mean(XX; dims=2))
+    sigma = vec(std(XX; dims=2))
     standardize!(XX, mu, sigma, obsdim=2)
-    @test abs(sum(mean(XX, 2))) <= 10e-10
+    @test abs(sum(mean(XX; dims=2))) <= 10e-10
 
     XX = deepcopy(X)
     flt = [1,2]
     standardize!(XX, obsdim=1, operate_on=flt)
-    @test abs(sum(mean(XX[:,flt], 1))) <= 10e-10
-    @test vec(std(XX[:,flt], 1)) ≈ ones(2)
+    @test abs(sum(mean(XX[:,flt]; dims=1))) <= 10e-10
+    @test vec(std(XX[:,flt]; dims=1)) ≈ ones(2)
     @test all(X[:,[3,4]] .== XX[:,[3,4]])
 
     XX = deepcopy(X)
     flt = [2,8]
-    mu = vec(mean(XX, 2))
-    sigma = vec(std(XX, 2))
+    mu = vec(mean(XX; dims=2))
+    sigma = vec(std(XX; dims=2))
     standardize!(XX, mu[flt], sigma[flt], obsdim=2, operate_on=flt)
-    @test abs(sum(mean(XX[flt,:], 2))) <= 10e-10
+    @test abs(sum(mean(XX[flt,:]; dims=2))) <= 10e-10
 
     scaler = StandardScaler(X)
     XX = transform(X, scaler)
-    @test abs(sum(mean(XX, 2))) <= 10e-10
-    @test std(XX, 2) ≈ ones(size(X, 1))
+    @test abs(sum(mean(XX; dims=2))) <= 10e-10
+    @test std(XX; dims=2) ≈ ones(size(X, 1))
 
     scaler = fit(StandardScaler, X)
     XX = transform(X, scaler)
-    @test abs(sum(mean(XX, 2))) <= 10e-10
-    @test std(XX, 2) ≈ ones(size(X, 1))
+    @test abs(sum(mean(XX; dims=2))) <= 10e-10
+    @test std(XX; dims=2) ≈ ones(size(X, 1))
 
     Xi = round.(Int, X)
     XX = transform(Xi, scaler)
-    @test abs(sum(mean(XX, 2))) <= 10e-10
-    @test std(XX, 2) ≈ ones(size(X, 1))
+    @test abs(sum(mean(XX; dims=2))) <= 10e-10
+    @test std(XX; dims=2) ≈ ones(size(X, 1))
 
     XX, scaler = fit_transform(StandardScaler, X)
-    @test abs(sum(mean(XX, 2))) <= 10e-10
-    @test std(XX, 2) ≈ ones(size(X, 1))
+    @test abs(sum(mean(XX; dims=2))) <= 10e-10
+    @test std(XX; dims=2) ≈ ones(size(X, 1))
 
     XX = deepcopy(X)
     scaler = fit_transform!(StandardScaler, XX)
-    @test abs(sum(mean(XX, 2))) <= 10e-10
-    @test std(XX, 2) ≈ ones(size(X, 1))
+    @test abs(sum(mean(XX; dims=2))) <= 10e-10
+    @test std(XX; dims=2) ≈ ones(size(X, 1))
 
     scaler = fit(StandardScaler, X, obsdim=2)
     XX = transform(X, scaler)
-    @test abs(sum(mean(XX, 2))) <= 10e-10
-    @test std(XX, 2) ≈ ones(size(X, 1))
+    @test abs(sum(mean(XX; dims=2))) <= 10e-10
+    @test std(XX; dims=2) ≈ ones(size(X, 1))
 
     scaler = fit(StandardScaler, X, obsdim=1)
     XX = transform(X, scaler)
-    @test abs(sum(mean(XX, 1))) <= 10e-10
-    @test vec(std(XX, 1)) ≈ ones(size(X, 2))
+    @test abs(sum(mean(XX; dims=1))) <= 10e-10
+    @test vec(std(XX; dims=1)) ≈ ones(size(X, 2))
 
     flt = [1,4]
     scaler = fit(StandardScaler, X, obsdim=1, operate_on=flt)
     XX = transform(X, scaler)
     xx = transform(vec(X[1,:]), scaler)
-    @test abs(sum(mean(XX[:,flt], 1))) <= 10e-10
-    @test vec(std(XX[:,flt], 1)) ≈ ones(size(X[:,flt], 2))
+    @test abs(sum(mean(XX[:,flt]; dims=1))) <= 10e-10
+    @test vec(std(XX[:,flt]; dims=1)) ≈ ones(size(X[:,flt], 2))
     @test all(xx .== XX[1,:])
 
     XX = deepcopy(X)
@@ -121,8 +120,8 @@ D_NA[1, :A] = missing
     scaler = fit(StandardScaler, X, obsdim=1, operate_on=flt)
     transform!(XX, scaler)
     transform!(xx, scaler)
-    @test abs(sum(mean(XX[:,flt], 1))) <= 10e-10
-    @test vec(std(XX[:,flt], 1)) ≈ ones(size(X[:,flt], 2))
+    @test abs(sum(mean(XX[:,flt]; dims=1))) <= 10e-10
+    @test vec(std(XX[:,flt]; dims=1)) ≈ ones(size(X[:,flt], 2))
     @test all(xx .== XX[1,:])
 end
 
@@ -158,7 +157,7 @@ end
     # skip columns that contain NA values
     DD = deepcopy(D_NA)
     mu, sigma = standardize!(DD)
-    @test isna(DD[1, :A])
+    @test ismissing(DD[1, :A])
     @test all(DD[2:end, :A] .== D_NA[2:end, :A])
     @test abs(mean(DD[:B])) < 10e-10
     @test abs(std(DD[:B])) - 1 < 10e-10
