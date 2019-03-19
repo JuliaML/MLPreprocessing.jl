@@ -85,7 +85,7 @@ function center!(X::AbstractMatrix,
     center!(X, ObsDim.Constant{2}(), operate_on)
 end
 
-function center!(X::AbstractArray,
+function center!(X::AbstractMatrix,
                  obsdim::ObsDim.Constant{M},
                  operate_on::AbstractVector) where {M}
     μ = vec(mean(X; dims=M))[operate_on]
