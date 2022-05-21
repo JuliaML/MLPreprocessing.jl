@@ -1,3 +1,7 @@
+# DEPRECATED
+
+This package is deprecated. Please use [TableTransforms.jl](https://github.com/JuliaML/TableTransforms.jl) instead.
+
 # MLPreprocessing
 
 | **Package Status** | **Package Evaluator** | **Build Status**  |
